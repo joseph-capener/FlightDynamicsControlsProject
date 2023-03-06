@@ -16,7 +16,7 @@ from viewers.draw_mav import DrawMav
 
 
 class MavViewer():
-    def __init__(self, app):
+    def __init__(self, app, aircraft = 1):
         self.scale = 100
         # initialize Qt gui application and window
         self.app = app  # initialize QT, external so that only one QT process is running
@@ -36,23 +36,35 @@ class MavViewer():
         self.window.show()  # display configured window
         # self.window.raise_() # bring window to the front
 
-        self.plot_initialized = False # has the mav been plotted yet?
+        self.plot_initialized = [False] * aircraft # has the mav been plotted yet?
         self.mav_plot = []
+        self.follow_key_pressed = False
+        self.follow_id = 0
 
-    def update(self, state):
+    def update(self, state, id):
         # initialize the drawing the first time update() is called
-        if not self.plot_initialized:
-            self.mav_plot = DrawMav(state, self.window)
-            self.plot_initialized = True
+        if not self.plot_initialized[id]:
+            self.mav_plot.append(DrawMav(state, self.window))
+            self.plot_initialized[id] = True
         # else update drawing on all other calls to update()
         else:
-            self.mav_plot.update(state)
-            
-            
-            
+            self.mav_plot[id].update(state)
         # update the center of the camera view to the mav location
-        view_location = Vector(state.east, state.north, state.altitude)  # defined in ENU coordinates
-        self.window.opts['center'] = view_location
+        if id == self.follow_id:
+            view_location = Vector(state.east, state.north, state.altitude)  # defined in ENU coordinates
+            self.window.opts['center'] = view_location
+        # print(self.window.keysPressed)
+        if self.window.follow_key in self.window.keysPressed and self.follow_key_pressed == False:
+            # print(self.follow_id)
+            self.follow_id += 1
+            self.follow_key_pressed = True
+            if self.follow_id >= len(self.mav_plot):
+                self.follow_id = 0
+        if self.window.follow_key not in self.window.keysPressed:
+            self.follow_key_pressed = False
+            
+            
+        
         # redraw
     
     def process_app(self):
