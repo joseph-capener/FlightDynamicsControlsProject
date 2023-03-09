@@ -77,10 +77,15 @@ h_command = Signals(dc_offset=100.0,
                     amplitude=20.0,
                     start_time=0.0,
                     frequency=0.02)
-chi_command = Signals(dc_offset=np.radians(0.0),
+chi_command = [Signals(dc_offset=np.radians(0.0),
                       amplitude=np.radians(45.0),
-                      start_time=10.0,
-                      frequency=0.015)
+                      start_time=5.0,
+                      frequency=0.015),
+               Signals(dc_offset=np.radians(0.0),
+                      amplitude=np.radians(45.0),
+                      start_time=1.0,
+                      frequency=0.015)]
+
 
 # initialize the simulation time
 sim_time = SIM.start_time
@@ -92,11 +97,13 @@ while sim_time < end_time:
 
     # -------autopilot commands-------------
     commands.airspeed_command = Va_command.polynomial(sim_time)
-    commands.course_command   = chi_command.polynomial(sim_time)
+    # commands.course_command   = chi_command.polynomial(sim_time)
     commands.altitude_command = h_command.polynomial(sim_time)
 
     # -------- autopilot -------------
     for id in range(NUM_AIRCRAFT):
+        commands.course_command = chi_command[id].polynomial(sim_time)
+        
         measurements[id] = mav[id].sensors()  # get sensor measurements
         estimated_state[id] = observer[id].update(measurements[id])  # estimate states from measurements
         delta[id], commanded_state[id] = autopilot[id].update(commands, estimated_state[id])
