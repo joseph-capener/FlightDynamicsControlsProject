@@ -13,7 +13,7 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import pyqtgraph.Vector as Vector
 from viewers.draw_mav import DrawMav
-
+from qtpy import QtCore, QtGui, QtWidgets
 
 class MavViewer():
     def __init__(self, app, aircraft = 1):
@@ -33,6 +33,8 @@ class MavViewer():
         # center.setY(250)
         # center.setZ(0)
         # self.window.setCameraPosition(pos=center, distance=self.scale, elevation=50, azimuth=-90)
+        self.window.noRepeatKeys.append(QtCore.Qt.Key.Key_Space)
+        self.window.follow_key = QtCore.Qt.Key.Key_Space
         self.window.show()  # display configured window
         # self.window.raise_() # bring window to the front
 
