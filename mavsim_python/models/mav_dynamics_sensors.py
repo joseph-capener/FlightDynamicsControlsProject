@@ -30,6 +30,7 @@ class MavDynamics:
         # We will also need a variety of other elements that are functions of the _state and the wind.
         # self.true_state is a 19x1 vector that is estimated and used by the autopilot to control the aircraft:
         # true_state = [pn, pe, h, Va, alpha, beta, phi, theta, chi, p, q, r, Vg, wn, we, psi, gyro_bx, gyro_by, gyro_bz]
+        # intruder_state = TODO: This can be a smaller vector than true_state that only includes state values we know we can track
         self._state = np.array([[MAV.north0],  # (0)
                                [MAV.east0],   # (1)
                                [MAV.down0],   # (2)
@@ -43,8 +44,28 @@ class MavDynamics:
                                [MAV.p0],    # (10)
                                [MAV.q0],    # (11)
                                [MAV.r0],    # (12)
-                               [0],   # (13)
-                               [0],   # (14)
+                               [0.],   # (13)
+                               [0.],   # (14)
+                               ])
+        self.other_state = np.array([[0.],  # (0)
+                               [0.],   # (1)
+                               [0.],   # (2)
+                               [0.],    # (3)
+                               [0.],    # (4)
+                               [0.],    # (5)
+                               [0.],    # (6)
+                               [0.],    # (7)
+                               [0.],    # (8)
+                               [0.],    # (9)
+                               [0.],    # (10)
+                               [0.],    # (11)
+                               [0.],    # (12)
+                               [0.],   # (13)
+                               [0.],   # (14)
+                               [0.],   # (15)
+                               [0.],   # (16)
+                               [0.],   # (17)
+                               [0.],   # (18)
                                ])
         # store wind data for fast recall since it is used at various points in simulation
         self._wind = np.array([[0.], [0.], [0.]])  # wind in NED frame in meters/sec
@@ -357,6 +378,31 @@ class MavDynamics:
                       + (MAV.rho * np.power(MAV.D_prop, 4) * MAV.C_Q1 * self._Va / (2 * np.pi)) * omega_p\
                       + (MAV.rho * np.power(MAV.D_prop, 3) * MAV.C_Q2 * self._Va**2)
         return thrust_prop, torque_prop
+    
+    def getIntruderState(self, intruder_state):
+        # _state = [pn, pe, pd, u, v, w, e0, e1, e2, e3, p, q, r]
+        # true_state = [pn, pe, h, Va, alpha, beta, phi, theta, chi, p, q, r, Vg, wn, we, psi, gyro_bx, gyro_by, gyro_bz]
+        # intruder_state = TODO: This can be a smaller vector than true_state that only includes state values we know we can track
+
+        self.other_state[0] = intruder_state.north # pn
+        self.other_state[1] = intruder_state.east # pe
+        self.other_state[2] = intruder_state.altitude # h
+        self.other_state[3] = intruder_state.Va # Va (Maybe we determine this value with numerical derivative)
+        self.other_state[4] = intruder_state.alpha # alpha (Don't think this value can be verified with just radar)
+        self.other_state[5] = intruder_state.beta # beta //
+        self.other_state[6] = intruder_state.phi # phi //
+        self.other_state[7] = intruder_state.theta # theta //
+        self.other_state[8] = intruder_state.chi # chi //
+        self.other_state[9] = intruder_state.p # p //
+        self.other_state[10] = intruder_state.q # q //
+        self.other_state[11] = intruder_state.r # r //
+        self.other_state[12] = intruder_state.Vg # Vg //
+        self.other_state[13] = intruder_state.wn # wn (I don't think we need this value nor do I think we can determine it accurately)
+        self.other_state[14] = intruder_state.we # we //
+        self.other_state[15] = intruder_state.psi # psi
+        self.other_state[16] = intruder_state.bx # gyro_bx (Can't be determine via radar)
+        self.other_state[17] = intruder_state.by # gyro_by //
+        self.other_state[18] = intruder_state.bz # gyro_bz //
 
     def _update_true_state(self):
         # update the class structure for the true state:

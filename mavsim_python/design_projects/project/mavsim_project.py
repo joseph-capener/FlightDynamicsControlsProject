@@ -29,7 +29,7 @@ SENSOR_PLOTS = False
 ANIMATION = True
 SAVE_PLOT_IMAGE = False
 COMPUTE_MODEL = False
-NUM_AIRCRAFT = 2
+NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER
 
 # video initialization
 if VIDEO is True:
@@ -69,14 +69,23 @@ mav[1]._state[1] = 35.
 # autopilot commands
 from message_types.msg_autopilot import MsgAutopilot
 commands = MsgAutopilot()
-Va_command = Signals(dc_offset=25.0,
+#TODO: Modify second Va/h commands
+Va_command = [Signals(dc_offset=25.0,
                      amplitude=3.0,
                      start_time=2.0,
-                     frequency = 0.01)
-h_command = Signals(dc_offset=100.0,
+                     frequency = 0.01),
+              Signals(dc_offset=25.0,
+                     amplitude=3.0,
+                     start_time=2.0,
+                     frequency = 0.01)]
+h_command = [Signals(dc_offset=100.0,
                     amplitude=20.0,
                     start_time=0.0,
-                    frequency=0.02)
+                    frequency=0.02),
+             Signals(dc_offset=100.0,
+                    amplitude=20.0,
+                    start_time=0.0,
+                    frequency=0.02)]
 chi_command = [Signals(dc_offset=np.radians(0.0),
                       amplitude=np.radians(45.0),
                       start_time=5.0,
@@ -96,12 +105,14 @@ print("Press 'Esc' to exit...")
 while sim_time < end_time:
 
     # -------autopilot commands-------------
-    commands.airspeed_command = Va_command.polynomial(sim_time)
+    #commands.airspeed_command = Va_command.polynomial(sim_time)
     # commands.course_command   = chi_command.polynomial(sim_time)
-    commands.altitude_command = h_command.polynomial(sim_time)
+    #commands.altitude_command = h_command.polynomial(sim_time)
 
     # -------- autopilot -------------
     for id in range(NUM_AIRCRAFT):
+        commands.airspeed_command = Va_command[id].polynomial(sim_time)
+        commands.altitude_command = h_command[id].polynomial(sim_time)
         commands.course_command = chi_command[id].polynomial(sim_time)
         
         measurements[id] = mav[id].sensors()  # get sensor measurements
@@ -112,6 +123,9 @@ while sim_time < end_time:
         current_wind[id] = wind[id].update()  # get the new wind vector
         
         mav[id].update(delta[id], current_wind[id])  # propagate the MAV dynamics
+
+        if id == 1:
+            mav[1].getIntruderState(mav[0].true_state)
 
     # -------- update viewer -------------
     if ANIMATION:
