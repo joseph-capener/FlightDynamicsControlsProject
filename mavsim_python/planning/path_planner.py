@@ -16,6 +16,7 @@ from planning.rrt_dubins import RRTDubins
 class PathPlanner:
     def __init__(self,app, planner_flag = 'rrt_dubins', show_planner=True):
         # waypoints definition
+        np.random.seed(9)
         self.waypoints = MsgWaypoints()
         if planner_flag == 'rrt_straight':
             self.rrt_straight_line = RRTStraightLine(app=app, show_planner=show_planner)
@@ -26,11 +27,12 @@ class PathPlanner:
     def update(self, world_map, state, radius):
         print('planning...')
         if self._planner_flag == 'simple_straight':
+            
             Va = 25
             self.waypoints.type = 'fillet'
-            self.waypoints.add(np.array([[0, 0, -100]]).T, Va, np.inf, np.inf, 0, 0)
-            self.waypoints.add(np.array([[1000, 0, -100]]).T, Va, np.inf, np.inf, 0, 0)
-            self.waypoints.add(np.array([[0, 1000, -100]]).T, Va, np.inf, np.inf, 0, 0)
+            self.waypoints.add(np.array([[0, 0, -100]]).T,       Va, np.inf, np.inf, 0, 0)
+            self.waypoints.add(np.array([[1000, 0, -100]]).T,    Va, np.inf, np.inf, 0, 0)
+            self.waypoints.add(np.array([[0, 1000, -100]]).T,    Va, np.inf, np.inf, 0, 0)
             self.waypoints.add(np.array([[1000, 1000, -100]]).T, Va, np.inf, np.inf, 0, 0)
 
         elif self._planner_flag == 'simple_dubins':
@@ -56,6 +58,7 @@ class PathPlanner:
                                                            desired_airspeed, world_map, radius)
 
         elif self._planner_flag == 'rrt_dubins':
+           
             desired_airspeed = 25
             desired_altitude = 100
             # start pose is current pose
@@ -70,6 +73,7 @@ class PathPlanner:
                 end_pose = np.array([[0], [0], [-desired_altitude], [state.chi]])
             self.waypoints = self.rrt_dubins.update(start_pose, end_pose,
                                                     desired_airspeed, world_map, radius)
+            
         else:
             print("Error in Path Planner: Undefined planner type.")
         self.waypoints.plot_updated = False
