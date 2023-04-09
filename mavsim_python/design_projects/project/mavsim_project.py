@@ -29,7 +29,7 @@ SENSOR_PLOTS = False
 ANIMATION = True
 SAVE_PLOT_IMAGE = False
 COMPUTE_MODEL = False
-NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER
+NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER #TODO: Currently does not work for more than 1 follower and 1 intruder
 
 # video initialization
 if VIDEO is True:
@@ -63,7 +63,7 @@ delta           = [None] * NUM_AIRCRAFT
 commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
-mav[1]._state[1] = 35. 
+mav[1]._state[1] = 35. # What is this for?
 
 
 # autopilot commands
@@ -124,8 +124,9 @@ while sim_time < end_time:
         
         mav[id].update(delta[id], current_wind[id])  # propagate the MAV dynamics
 
-        if id == 1:
-            mav[1].getIntruderState(mav[0].true_state)
+        if id == NUM_AIRCRAFT-1: # TODO: Currently does not work for multiple intruders/followers, must fix
+            for i in range(NUM_AIRCRAFT):
+                mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
 
     # -------- update viewer -------------
     if ANIMATION:
