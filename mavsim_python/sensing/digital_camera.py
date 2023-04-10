@@ -7,6 +7,7 @@ from sys import path
 path.append('..')
 from tools.rotations import *
 from pinhole_camera import *
+import cv2 as cv
 
 class Simulated_Camera:
 
@@ -144,7 +145,7 @@ class Simulated_Camera:
         :return: The mask image of the object as a numpy array
         """
 
-        self.image = np.zeros((self.resolution.item(0), self.resolution.item(1)), dtype=int)
+        self.image = np.zeros((self.resolution.item(0), self.resolution.item(1)))
 
         location = self.get_image_location(obj_position)
 
@@ -159,7 +160,7 @@ class Simulated_Camera:
 
                 # Map the current pixel to a physical location on the image plane
                 x_location = -self.image_size.item(0) / 2 + i*x_step
-                y_location = self.image_size.item(1) - i*y_step
+                y_location = self.image_size.item(1) / 2 - j*y_step
 
                 # If the object is visible in that location, then light the pixel up
                 if (x_location - location.item(0))**2 + (y_location - location.item(1))**2 <= rad_i**2:
@@ -189,3 +190,25 @@ class Simulated_Camera:
         self.orientation = orientation
 
         return
+    
+
+
+# ================================
+# Main Method for testing purposes
+# ================================
+
+if __name__ == '__main__':
+
+    object_radius = 10.0
+    object_location = np.array([4,-3,100])
+
+    cam = Simulated_Camera(10,np.array([300,300]),np.array([10,10]))
+
+    mask = cam.get_image(object_location, object_radius)
+
+    cv.imshow('Mask', mask)
+    cv.waitKey(0)
+
+
+    print(mask)
+
