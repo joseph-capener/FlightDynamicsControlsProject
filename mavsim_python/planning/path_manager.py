@@ -244,7 +244,7 @@ class PathManager:
         angle = np.arccos(-qi_neg1.T @ qi)
         z = current + (radius / np.tan(angle/2)) * qi
         p = current
-        sign = np.sign(previous[0,0] * current[1,0] - previous[1,0] * current[0,0]) #previous[0] * current[1] - previous[1] * current[0]
+        sign = np.sign(next[0,0] * current[1,0] - next[1,0] * current[0,0]) #previous[0] * current[1] - previous[1] * current[0]
 
         # update halfspace variables
         self.halfspace_n = qi 
@@ -252,12 +252,12 @@ class PathManager:
         
         # Update path variables
         # self.path.__ =
-
+        # print(sign)
         self.path.type = 'orbit'
         self.path.orbit_center = current - (radius / np.sin(angle/2)) * (qi_neg1 - qi) / (np.linalg.norm(qi_neg1 - qi))
         self.path.orbit_radius = radius
         # orbit direction: 'CW'==clockwise, 'CCW'==counter clockwise
-        self.path.orbit_direction = 'CW' if sign == 1 else 'CCW'
+        self.path.orbit_direction = 'CW' if sign == -1 else 'CCW'
         self.path.plot_updated = False
 
     def construct_dubins_circle_start(self, waypoints, dubins_path):

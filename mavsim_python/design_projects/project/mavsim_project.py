@@ -17,9 +17,21 @@ from controlsys.autopilot import Autopilot
 from estimation.observer import Observer
 # from estimation.observer_full import Observer
 from viewers.mav_viewer_multi import MavViewer
+from viewers.mav_waypoint_viewer import MAVAndWaypointViewer
 from viewers.data_viewer import DataViewer
 from viewers.sensor_viewer import SensorViewer
 from tools.quit_listener import QuitListener
+
+import parameters.planner_parameters as PLAN
+from planning.path_follower import PathFollower
+from planning.path_manager import PathManager
+from planning.path_planner import PathPlanner
+from message_types.msg_waypoints import MsgWaypoints
+from tools.rotations import *
+
+
+waypoints = MsgWaypoints()
+
 
 quitter = QuitListener()
 
@@ -52,6 +64,23 @@ if SENSOR_PLOTS:
 
 # initialize elements of the architecture
 
+#################
+waypoints = MsgWaypoints()
+#waypoints.type = 'straight_line'
+waypoints.type = 'fillet'
+# waypoints.type = 'dubins'
+Va = PLAN.Va0
+waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
+waypoints.add(np.array([[10000, 0, -300]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[0, -10000, -600]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf, 0, 0)
+
+
+
+
+###############
+
+
 wind = [WindSimulation(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
 mav = [MavDynamics(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]    
 autopilot = [Autopilot(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
@@ -63,7 +92,13 @@ delta           = [None] * NUM_AIRCRAFT
 commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
-mav[1]._state[1] = 35. 
+
+
+ 
+mav[0]._state[0] = -300. 
+mav[0]._state[1] = -200.
+mav[0]._state[2] = -100. 
+# mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
 
 
 # autopilot commands
@@ -95,10 +130,18 @@ chi_command = [Signals(dc_offset=np.radians(0.0),
                       start_time=1.0,
                       frequency=0.015)]
 
+autopilot = [Autopilot(SIM.ts_simulation), 
+             Autopilot(SIM.ts_simulation)]
+
+path_follower = [PathFollower(),
+                 PathFollower()]
+
+path_manager = [PathManager(),
+                PathManager()]
 
 # initialize the simulation time
 sim_time = SIM.start_time
-end_time = 100
+end_time = 800
 
 # main simulation loop
 print("Press 'Esc' to exit...")
@@ -111,13 +154,59 @@ while sim_time < end_time:
 
     # -------- autopilot -------------
     for id in range(NUM_AIRCRAFT):
-        commands.airspeed_command = Va_command[id].polynomial(sim_time)
-        commands.altitude_command = h_command[id].polynomial(sim_time)
-        commands.course_command = chi_command[id].polynomial(sim_time)
+        # commands.airspeed_command = Va_command[id].polynomial(sim_time)
+        # commands.altitude_command = h_command[id].polynomial(sim_time)
+        # commands.course_command = chi_command[id].polynomial(sim_time)
         
         measurements[id] = mav[id].sensors()  # get sensor measurements
         estimated_state[id] = observer[id].update(measurements[id])  # estimate states from measurements
-        delta[id], commanded_state[id] = autopilot[id].update(commands, estimated_state[id])
+        
+        path = path_manager[id].update(waypoints, PLAN.R_min, mav[id].true_state)
+
+        # -------path follower-------------
+        autopilot_commands = path_follower[id].update(path, mav[id].true_state)
+        
+        
+        if id == 0 and sim_time != 0:
+            N = 4
+            
+            Bspeed = 370 # m / s
+            
+            pos0 = np.array([[mav[0].true_state.north , mav[0].true_state.east , -mav[0].true_state.altitude]]).T
+            vel0 = mav[0].true_state.Va * Euler2Rotation(0., 0., mav[0].true_state.chi) @ np.array([[1., 0., 0.]]).T
+            pos1 = np.array([[mav[1].true_state.north , mav[1].true_state.east , -mav[1].true_state.altitude]]).T
+            vel1 = mav[1].true_state.Va * Euler2Rotation(0., 0., mav[1].true_state.chi) @ np.array([[1., 0., 0.]]).T
+            
+            R = pos1 - pos0
+            V = vel1 - vel0
+            
+            
+            target = pos1 + vel1 / np.linalg.norm(vel1) * 5.0
+            R_t = target - pos0
+            target_angle = 40
+            
+            ang0 = np.arctan2(R[1] , R[0]) + np.sign(np.arctan2(R[1] , R[0])) * np.deg2rad(-target_angle)
+            # ang0 = np.arctan2(R_t[1] , R_t[0]) - np.sign(np.arctan2(R_t[1] , R_t[0])) * np.deg2rad(target_angle) # PROJECTILE EXTRAPOLATION
+            # ang0 = np.arctan2(R_t[1] , R_t[0]) # This is for leading the enemy
+            
+            commands.course_command = ang0[0]
+            commands.airspeed_command = mav[1].true_state.Va + (target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0]))[0])) / target_angle # CONSTANT FLYING ANGLE
+            
+            # commands.airspeed_command = mav[1].true_state.Va + 10
+            
+            commands.altitude_command = mav[1].true_state.altitude
+            autopilot_commands = commands
+            print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
+            
+            
+            
+            # print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
+            # print("SPEED= ",commands.airspeed_command)
+            # print((target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0])))[0]))
+            # print("CC =" ,commands.course_command)
+            
+        
+        delta[id], commanded_state[id] = autopilot[id].update(autopilot_commands, mav[id].true_state)
         
         # -------- physical system -------------
         current_wind[id] = wind[id].update()  # get the new wind vector
@@ -128,16 +217,16 @@ while sim_time < end_time:
             mav[1].getIntruderState(mav[0].true_state)
 
     # -------- update viewer -------------
-    if ANIMATION:
-        for id in range(NUM_AIRCRAFT):    
-            mav_view.update(mav[id].true_state, id)  # plot body of MAV
+        if ANIMATION:
+            # for id in range(NUM_AIRCRAFT):    
+            mav_view.update(mav[id].true_state, path, waypoints, id)  # plot body of MAV
         
     if DATA_PLOTS:
         plot_time = sim_time
         data_view.update(mav[0].true_state,  # true states
-                         estimated_state[0],  # estimated states
-                         None,  # commanded states
-                         delta[0])  # inputs to aircraft
+                         estimated_state[0], # estimated states
+                         None,               # commanded states
+                         delta[0])           # inputs to aircraft
     if SENSOR_PLOTS:
         sensor_view.update(measurements[0])
         

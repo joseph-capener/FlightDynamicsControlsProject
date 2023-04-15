@@ -10,7 +10,7 @@ from tools.rotations import Euler2Rotation
 
 
 class DrawMav:
-    def __init__(self, state, window):
+    def __init__(self, state, window, color=0):
         """
         Draw the MAV.
 
@@ -23,6 +23,9 @@ class DrawMav:
             state.theta  # pitch angle
             state.psi  # yaw angle
         """
+        
+        self.color = color # 0 for blue, 1 for red
+        
         # get points that define the non-rotated, non-translated mav and the mesh colors
         self.mav_points, self.mav_meshColors = self.get_points()
 
@@ -128,20 +131,25 @@ class DrawMav:
         green = np.array([0., 1., 0., 1])
         blue = np.array([0., 0., 1., 1])
         yellow = np.array([1., 1., 0., 1])
+        white = np.array([1., 1., 1., 0.])
+        c = blue
+        if self.color == 1:
+            c = red
+        
         meshColors = np.empty((13, 3, 4), dtype=np.float32)
         meshColors[0] = yellow  # nose-top
         meshColors[1] = yellow  # nose-right
         meshColors[2] = yellow  # nose-bottom
         meshColors[3] = yellow  # nose-left
-        meshColors[4] = blue  # fuselage-left
-        meshColors[5] = blue  # fuselage-top
-        meshColors[6] = blue  # fuselage-right
-        meshColors[7] = red  # fuselage-bottom
+        meshColors[4] = c  # fuselage-left
+        meshColors[5] = c  # fuselage-top
+        meshColors[6] = c  # fuselage-right
+        meshColors[7] = white  # fuselage-bottom
         meshColors[8] = green  # wing
         meshColors[9] = green  # wing
         meshColors[10] = green  # horizontal tail
         meshColors[11] = green  # horizontal tail
-        meshColors[12] = blue  # vertical tail
+        meshColors[12] = c  # vertical tail
         return points, meshColors
 
     def points_to_mesh(self, points):
