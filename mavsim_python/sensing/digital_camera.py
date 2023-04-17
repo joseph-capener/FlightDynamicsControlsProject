@@ -7,6 +7,7 @@ from sys import path
 path.append('..')
 from tools.rotations import *
 from pinhole_camera import *
+import mav_points
 import cv2 as cv
 
 class Simulated_Camera:
@@ -170,6 +171,39 @@ class Simulated_Camera:
 
 
         return self.image
+    
+    def draw_mav(self, obj_position:np.ndarray, obj_orientation:np.ndarray) -> np.ndarray:
+        
+        """
+        Given an object's position, returns an mask image with the object. Assumes object is a sphere
+
+        :param obj_position: the 3d intertial position of the object in the 
+        the from [[n],[e],[d]] or similar
+        :param radius: the radius of the object in meters
+
+        :param obj_position: the 3d intertial position of the object in the 
+        the form [[n],[e],[d]] or similar
+        
+        :param obj_orientation: the 3d rotation of the mav in the inertial frame expressed
+        as a quaternion in the form [e0, e1, e2, e3] or similar.
+
+        :return: The mask image of the object as a numpy array
+        """
+
+        mask = np.zeros(self.resolution)
+
+        # rotate all the points on the mav
+
+        # find the difference of all the points of the mav
+
+        # project all points into the image frame
+
+        # convert all points 
+
+        # somehow solve the edge case problem?
+
+        return mask
+
 
 
     def set_pose(self, position: np.ndarray, orientation: np.ndarray) -> None:
