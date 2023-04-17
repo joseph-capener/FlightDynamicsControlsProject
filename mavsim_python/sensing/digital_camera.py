@@ -77,7 +77,7 @@ class Simulated_Camera:
 
         
 
-    def get_image_size(self, obj_position:np.ndarray, radius: float) -> float:
+    def get_image_size(self, obj_position:np.ndarray, radius:float) -> float:
         """
         Given an object's position, finds its size in the image plane. Assumes the object is a sphere
 
@@ -200,7 +200,7 @@ class Simulated_Camera:
 if __name__ == '__main__':
 
     object_radius = 10.0
-    object_location = np.array([4,-3,100])
+    object_location = np.array([4,-30,100])
 
     cam = Simulated_Camera(10,np.array([300,300]),np.array([10,10]))
 
