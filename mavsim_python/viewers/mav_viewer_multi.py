@@ -13,6 +13,9 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import pyqtgraph.Vector as Vector
 from viewers.draw_mav import DrawMav
+from viewers.draw_path import DrawPath
+from viewers.draw_waypoints import DrawWaypoints
+
 from qtpy import QtCore, QtGui, QtWidgets
 
 class MavViewer():
@@ -40,17 +43,29 @@ class MavViewer():
 
         self.plot_initialized = [False] * aircraft # has the mav been plotted yet?
         self.mav_plot = []
+        self.path_plot = []
+        self.waypoint_plot = []
         self.follow_key_pressed = False
         self.follow_id = 0
 
-    def update(self, state, id):
+    def update(self, state, path, waypoints, id):
+        blue = np.array([[30, 144, 255, 255]])/255.
+        red = np.array([[1., 0., 0., 1]])
         # initialize the drawing the first time update() is called
         if not self.plot_initialized[id]:
-            self.mav_plot.append(DrawMav(state, self.window))
+            self.mav_plot.append(DrawMav(state, self.window, id))
+            self.waypoint_plot.append(DrawWaypoints(waypoints, path.orbit_radius, blue, self.window))
+            self.path_plot.append(DrawPath(path, red, self.window))
             self.plot_initialized[id] = True
         # else update drawing on all other calls to update()
         else:
             self.mav_plot[id].update(state)
+            if waypoints.flag_waypoints_changed:
+                self.waypoint_plot[id].update(waypoints)
+                waypoints.flag_waypoints_changed = False
+            if not path.plot_updated:  # only plot path when it changes
+                self.path_plot[id].update(path, red)
+                path.plot_updated = True
         # update the center of the camera view to the mav location
         if id == self.follow_id:
             view_location = Vector(state.east, state.north, state.altitude)  # defined in ENU coordinates

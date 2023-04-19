@@ -41,15 +41,20 @@ class PathFollower:
         
         epi = (pi - path.line_origin)
         # print(np.array([0,0,-1.]), path.line_direction.T[0])
-        n = np.cross(path.line_direction.T[0], np.array([0,0,-1.]))
-        si = epi - (epi.T @ path.line_direction).item(0) * n
-        
+        n = np.cross(np.array([0.,0., -1.]) ,path.line_direction.T).T
+        n /= np.linalg.norm(n)
+        si = epi - (epi.T @ n).item(0) * n
+        # print(si)
         sn = si.item(0)
         se = si.item(1)
         sd = si.item(2)
-        qn = path.line_direction.item(0)
-        qe = path.line_direction.item(1)
-        qd = path.line_direction.item(2)
+        
+        q = path.line_direction
+        q /= np.linalg.norm(q)
+        qn = q.item(0)
+        qe = q.item(1)
+        qd = q.item(2)
+        
         
         
         ##### TODO #####
@@ -59,10 +64,10 @@ class PathFollower:
         # course command
         self.autopilot_commands.course_command =  Xq - self.chi_inf * 2/np.pi * np.arctan(self.k_path * epy)
 
+        
         # altitude command
         
         self.autopilot_commands.altitude_command = -rd - (np.sqrt(sn**2 + se**2) * (qd / np.sqrt(qn**2 + qe**2))) 
-
         # feedforward roll angle for straight line is zero
         self.autopilot_commands.phi_feedforward = 0
 
@@ -76,10 +81,7 @@ class PathFollower:
         
         d = np.sqrt((state.north - path.orbit_center.item(0))**2 + (state.east - path.orbit_center.item(1))**2) 
         
-        
-        
         phi_alt = np.arctan2(state.east - path.orbit_center.item(1), state.north - path.orbit_center.item(0))
-        
         
         
         while phi_alt - state.chi < -np.pi:
@@ -89,16 +91,13 @@ class PathFollower:
              
         Xo = phi_alt + lmbda*np.pi/2 
         
-        
-        
         ##### TODO #####
         # airspeed command
         self.autopilot_commands.airspeed_command = path.airspeed
 
         # course command
         self.autopilot_commands.course_command = Xo + lmbda*np.arctan(self.k_orbit * (d - path.orbit_radius)/path.orbit_radius)
-        if d < 50:
-            self.autopilot_commands.course_command = Xo - np.pi/2
+
         
         # print(self.autopilot_commands.course_command)
 
