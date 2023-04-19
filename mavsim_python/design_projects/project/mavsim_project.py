@@ -63,7 +63,7 @@ delta           = [None] * NUM_AIRCRAFT
 commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
-mav[1]._state[1] = 35. # What is this for?
+mav[1]._state[1] = 35. # Offset aircraft
 
 
 # autopilot commands
@@ -79,7 +79,7 @@ Va_command = [Signals(dc_offset=25.0,
                      start_time=2.0,
                      frequency = 0.01)]
 h_command = [Signals(dc_offset=100.0,
-                    amplitude=20.0,
+                    amplitude=0.0,
                     start_time=0.0,
                     frequency=0.02),
              Signals(dc_offset=100.0,
@@ -125,7 +125,7 @@ while sim_time < end_time:
         mav[id].update(delta[id], current_wind[id])  # propagate the MAV dynamics
 
         if id == NUM_AIRCRAFT-1: # TODO: Currently does not work for multiple intruders/followers, must fix
-            for i in range(NUM_AIRCRAFT):
+            for i in range(NUM_AIRCRAFT-1):
                 mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
 
     # -------- update viewer -------------

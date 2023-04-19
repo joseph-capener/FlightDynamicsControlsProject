@@ -49,6 +49,9 @@ class MavDynamics:
                                [0.],   # (14)
                                ])
         self.other_state = MsgIntruder()
+        self.pos = np.zeros(3)
+        self.pos_1past = np.zeros(3)
+        self.pos_2past = np.zeros(3)
         # store wind data for fast recall since it is used at various points in simulation
         self._wind = np.array([[0.], [0.], [0.]])  # wind in NED frame in meters/sec
         # store forces to avoid recalculation in the sensors function
@@ -365,36 +368,41 @@ class MavDynamics:
         # _state = [pn, pe, pd, u, v, w, e0, e1, e2, e3, p, q, r]
         # true_state = [pn, pe, h, Va, alpha, beta, phi, theta, chi, p, q, r, Vg, wn, we, psi, gyro_bx, gyro_by, gyro_bz]
         # intruder_state = [pn, pe, h, Vg, chi, gamma] (USING MSGSTATE)
+
+        # The assumption made is that a ground station with radar capabilities is relaying these intruder states to the follower
+        radar_frequency = 100 # TODO: Determine radar frequency: (400 MHz : 36 GHz) Current sim frequency is 100 Hz. This is a conflict.
+                                # Frequency will only need to be as high as is required to properly predict Vg, chi, and gamma. However, 
+                                # 100 Hz frequency will probably be too low.
+        dt = 1/radar_frequency # Time inbetween updated radar position data
         
         self.other_state.radar_n = intruder_state.north # pn
         self.other_state.radar_e = intruder_state.east # pe
         self.other_state.radar_h = intruder_state.altitude # h
-        self.other_state.radar_Vg = intruder_state.Vg # Vg (Maybe we determine this value with numerical derivative)
-        self.other_state.radar_course = intruder_state.chi  # gps course angle
-        self.other_state.radar_flight_path = intruder_state.gamma # radar flight path
-        
-        # self.other_state[3] = intruder_state.Va # Va //
-        # self.other_state[4] = intruder_state.alpha # alpha (Don't think this value can be verified with just radar)
-        # self.other_state[5] = intruder_state.beta # beta //
-        # self.other_state[6] = intruder_state.phi # phi //
-        # self.other_state[7] = intruder_state.theta # theta //
-        # self.other_state[8] = intruder_state.chi # chi //
-        # self.other_state[9] = intruder_state.p # p //
-        # self.other_state[10] = intruder_state.q # q //
-        # self.other_state[11] = intruder_state.r # r //
-        # self.other_state[12] = intruder_state.Vg # Vg //
-        # self.other_state[13] = intruder_state.wn # wn (I don't think we need this value nor do I think we can determine it accurately)
-        # self.other_state[14] = intruder_state.we # we //
-        # self.other_state[15] = intruder_state.psi # psi
-        # self.other_state[16] = intruder_state.bx # gyro_bx (Can't be determine via radar)
-        # self.other_state[17] = intruder_state.by # gyro_by //
-        # self.other_state[18] = intruder_state.bz # gyro_bz //
+        self.pos = np.array([[self.other_state.radar_n],[self.other_state.radar_e],[self.other_state.radar_h]])
+        #Implemented state estimation (might be better to create funciton)
+        dPdt = np.zeros(3)
+        dPdt = (self.pos - self.pos_2past)/(2*self._ts_simulation)
+        Vg = np.linalg.norm(dPdt)
+        gamma = -np.arcsin(dPdt.item(2)/Vg)
+        chi = np.arctan2(dPdt.item(1), dPdt.item(0))
+        self.other_state.radar_Vg = Vg # Vg (Maybe we determine this value with numerical derivative)
+        self.other_state.radar_course = chi  # gps course angle
+        self.other_state.radar_flight_path = gamma # radar flight path  
+            
+        ### DEBUG ###
+        # print('Vg Actual:',intruder_state.Vg,'Vg Estimated:',Vg)
+        # print('Chi Actual:',intruder_state.chi,'Chi Estimated:',chi)
+        # print('Gamma Actual:',intruder_state.gamma,'Gamma Estimated:',gamma)
+
+        self.pos_2past = self.pos_1past
+        self.pos_1past = self.pos
 
     def _update_true_state(self):
         # update the class structure for the true state:
         #   [pn, pe, h, Va, alpha, beta, phi, theta, chi, p, q, r, Vg, wn, we, psi, gyro_bx, gyro_by, gyro_bz]
         phi, theta, psi = Quaternion2Euler(self._state[6:10])
         pdot = Quaternion2Rotation(self._state[6:10]) @ self._state[3:6]
+        #print('dHdt Actual:', pdot)
         self.true_state.north = self._state.item(0)
         self.true_state.east = self._state.item(1)
         self.true_state.altitude = -self._state.item(2)
