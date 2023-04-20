@@ -217,6 +217,8 @@ while sim_time < end_time:
             for i in range(NUM_AIRCRAFT-1):
                 mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
 
+        
+
     # -------- update viewer -------------
         if ANIMATION:
             # for id in range(NUM_AIRCRAFT):    
