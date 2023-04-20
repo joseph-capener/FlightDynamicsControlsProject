@@ -68,7 +68,7 @@ class Simulated_Camera:
         # check if the object is out of the field of view of the image plane
         # (based on image size)
         x_i = self.pin_hole.single_dimension_projection(x_0, z_0)
-        z_i = self.pin_hole.single_dimension_projection(y_0, z_0)
+        y_i = self.pin_hole.single_dimension_projection(y_0, z_0)
 
         if abs(x_i) > self.image_size.item(0) or abs(y_i) > self.image_size.item(1):
 
@@ -168,12 +168,9 @@ class Simulated_Camera:
 
                     self.image[i][j] = 1
 
-
-
         return self.image
     
-    def draw_mav(self, obj_position:np.ndarray, obj_orientation:np.ndarray) -> np.ndarray:
-        
+    def draw_mav(self, obj_position:np.ndarray, obj_orientation:np.ndarray) -> np.ndarray:     
         """
         Given an object's position, returns an mask image with the object. Assumes object is a sphere
 
@@ -224,6 +221,55 @@ class Simulated_Camera:
         self.orientation = orientation
 
         return
+    
+
+    def _make_render_image(surfaces: np.ndarray) -> np.ndarray:
+        """
+        Function that given the location of surfaces making up the uav 
+        makes a full render of the uav in the image plane, making up of all surfaces that 
+        touch the image plane
+
+        :param surfaces: An ndarry containing smaller arrays which are each of the surfaces
+        which make up the plane. For order see return of mav_points.points_to_polygon 
+
+        :return: ndarray mask containing the rendered surfaces       
+        """
+
+        pass
+
+    def _reduce_render_image(render_image: np.ndarray) -> np.ndarray:
+        """
+        Function that given the location of surfaces making up the uav 
+        makes a full render of the uav in the image plane, making up of all surfaces that 
+        touch the image plane
+
+        :param surfaces: An ndarry containing smaller arrays which are each of the surfaces
+        which make up the plane. For order see return of mav_points.points_to_polygon 
+
+        :return: ndarray mask containing the rendered surfaces       
+        """
+
+        pass
+
+    
+    def _image_index(point: np.ndarray, image_size: np.ndarray) -> np.ndarray:
+        """
+        Takes in the location of a point in the image frame and outputs the image 
+        index 
+
+        :param point: point location in format [[xi], [yi]] or similar
+        :param image_size: image size in units of length in form [[size_x], [size_y]] or similar
+
+        :return: mask location of point in form [i,j] or simlar
+        """
+
+        pass
+
+    
+
+    
+    
+
     
 
 
