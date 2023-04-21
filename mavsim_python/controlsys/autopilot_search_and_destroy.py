@@ -7,6 +7,9 @@ from message_types.msg_autopilot import MsgAutopilot
 from tools.rotations import *
 
 from sensing.digital_camera import Simulated_Camera
+from sensing.cam_sim_viewer import CamSimViewer
+
+import parameters.simulation_parameters as SIM
 
 
 class AutopilotSD:
@@ -21,6 +24,9 @@ class AutopilotSD:
         self.canSeeTarget = False
         
         self.cam = Simulated_Camera(1 ,np.array([300,300]), np.array([10,10]), np.array([60.,60.]))
+        self.camView = CamSimViewer(self.cam)
+        
+        self.updateTimers = 0.
         
     def update(self, radar_states_list: list[MsgIntruder]):
         # distances to each mav
@@ -107,11 +113,13 @@ class AutopilotSD:
         commands.airspeed_command = 28.
         commands.altitude_command = -pos1.item(2)
         
+        
+        
         if self.cam.is_in_field_of_view(pos1):
-            # print("IN FOV")
-            
-            
-            
+            self.updateTimers += SIM.ts_simulation
+            if self.updateTimers > 0.1:
+                self.camView.update(pos0, np.array([[myState.phi, myState.theta, myState.psi]]) , pos1)
+                self.updateTimers = 0.
             pass
             
             # Find true angles

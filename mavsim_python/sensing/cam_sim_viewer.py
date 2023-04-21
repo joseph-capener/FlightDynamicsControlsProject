@@ -7,7 +7,7 @@ for a digital camera simulator
 import cv2 as cv
 import numpy as np
 
-from digital_camera import Simulated_Camera
+from sensing.digital_camera import Simulated_Camera
 
 class CamSimViewer:
 
@@ -37,8 +37,8 @@ class CamSimViewer:
 
         :return: Nothing
         """
-        self._camera.set_pose(cam_position,cam_orientation)
-        image = self._camera.get_image(mav_state,self.radius)
+        # self._camera.set_pose(cam_position, cam_orientation)
+        image = self._camera.get_image(mav_state, self.radius)
 
         cv.imshow('Camera Viewer', image)
 

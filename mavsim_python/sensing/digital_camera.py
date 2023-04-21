@@ -112,9 +112,13 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = R__i_to_c @ obj_position
+        position_cam_frame = obj_position - self.position
         
-        position_cam_frame = position_cam_frame - self.position
+        position_cam_frame = np.array([[0., 1., 0.],
+                                      [0., 0., 1.],
+                                      [1., 0., 0.]]) @ R__i_to_c @ position_cam_frame
+        
+        
 
         z_0 = position_cam_frame.item(2)
 
@@ -142,7 +146,9 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = R__i_to_c @ obj_position
+        position_cam_frame = np.array([[0., 1., 0.],
+                                      [0., 0., 1.],
+                                      [1., 0., 0.]]) @ R__i_to_c @ (obj_position - self.position)
 
         x_0 = position_cam_frame.item(0)
         y_0 = position_cam_frame.item(1)
@@ -172,19 +178,29 @@ class Simulated_Camera:
 
         x_step = self.image_size.item(0) / self.resolution.item(0)
         y_step = self.image_size.item(1) / self.resolution.item(1)
+        
+        x_location = location.item(0) / x_step
+        y_location = location.item(1) / x_step
+        
+        loc = (int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2))
+        rad = int(rad_i / x_step)
+        
+        print(loc)
+        if loc[0] >= 0 and loc[1] >= 0:
+            cv.circle(img=self.image, center=loc, radius=rad, color=(255, 255, 255), thickness=-1)
 
-        for i in range(0, len(self.image)):
+        # for j in range(0, len(self.image)):
 
-            for j in (range(0, len(self.image[0]))):
+        #     for i in (range(0, len(self.image[0]))):
 
-                # Map the current pixel to a physical location on the image plane
-                x_location = -self.image_size.item(0) / 2 + i*x_step
-                y_location = self.image_size.item(1) / 2 - j*y_step
+        #         # Map the current pixel to a physical location on the image plane
+        #         x_location = -self.image_size.item(0) / 2 + i*x_step
+        #         y_location = self.image_size.item(1) / 2 - j*y_step
 
-                # If the object is visible in that location, then light the pixel up
-                if (x_location - location.item(0))**2 + (y_location - location.item(1))**2 <= rad_i**2:
+        #         # If the object is visible in that location, then light the pixel up
+        #         if (x_location - location.item(0))**2 + (y_location - location.item(1))**2 <= rad_i**2:
 
-                    self.image[i][j] = 1
+        #             self.image[j][i] = 1
 
         return self.image
     

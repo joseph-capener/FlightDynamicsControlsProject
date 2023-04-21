@@ -31,7 +31,7 @@ from planning.path_manager import PathManager
 from planning.path_planner import PathPlanner
 from message_types.msg_waypoints import MsgWaypoints
 from tools.rotations import *
-
+from sensing.cam_sim_viewer import CamSimViewer
 
 waypoints = MsgWaypoints()
 
@@ -87,9 +87,12 @@ waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf,
 wind = [WindSimulation(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
 mav = [MavDynamics(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
 
+
 autopilotSD = AutopilotSD(0, mav)  
 autopilot = [Autopilot(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
 observer = [Observer(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]   
+
+
 
 measurements    = [None] * NUM_AIRCRAFT
 estimated_state = [None] * NUM_AIRCRAFT  # estimate states from measurements
@@ -153,6 +156,8 @@ end_time = 800
 print("Press 'Esc' to exit...")
 while sim_time < end_time:
 
+    
+    
     # -------autopilot commands-------------
     #commands.airspeed_command = Va_command.polynomial(sim_time)
     # commands.course_command   = chi_command.polynomial(sim_time)
@@ -246,7 +251,8 @@ while sim_time < end_time:
         app.processEvents()
     if VIDEO is True:
         video.update(sim_time)
-        
+    
+    
     # -------Check to Quit the Loop-------
     if quitter.check_quit():
         break
