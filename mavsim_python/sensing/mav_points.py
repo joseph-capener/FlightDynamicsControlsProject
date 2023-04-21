@@ -3,6 +3,9 @@
 # mav_points.py -- file that contains the points needed to plot the mav
 
 import numpy as np
+from sys import path
+path.append('..')
+from tools.rotations import *
 
 # define MAV body parameters
 unit_length = 0.25
@@ -57,3 +60,77 @@ def points_to_polygons(points:np.ndarray) -> tuple:
     return nose_top, nose_right, nose_bottom, nose_left,\
            fuselage_left, fuselage_top, fuselage_right, fuselage_bottom,\
            wing_1, wing_2, elevator_1, elevator_2, tail
+
+
+def points_to_polygons(points:np.ndarray) -> list:
+    """
+    Given a list of uav points, returns the 
+    surfaces of the uav
+    """
+    nose_top = np.array([points[0], points[1], points[2]]) # nose-top
+    nose_right = np.array([points[0], points[1], points[4]])  # nose-right
+    nose_bottom = np.array([points[0], points[3], points[4]])  # nose-bottom
+    nose_left = np.array([points[0], points[3], points[2]])  # nose-left
+    fuselage_left = np.array([points[5], points[2], points[3]])  # fuselage-left
+    fuselage_top = np.array([points[5], points[1], points[2]])  # fuselage-top
+    fuselage_right = np.array([points[5], points[1], points[4]])  # fuselage-right
+    fuselage_bottom = np.array([points[5], points[3], points[4]])  # fuselage-bottom
+    wing_1 = np.array([points[6], points[7], points[9]])  # wing 1
+    wing_2 = np.array([points[7], points[8], points[9]])  # wing 2
+    elevator_1 = np.array([points[10], points[11], points[12]])  # horizontal tail
+    elevator_2 = np.array([points[10], points[12], points[13]])  # horizontal tail
+    tail = np.array([points[5], points[14], points[15]])  # vertical tail
+
+
+    return [nose_top, nose_right, nose_bottom, nose_left,\
+           fuselage_left, fuselage_top, fuselage_right, fuselage_bottom,\
+           wing_1, wing_2, elevator_1, elevator_2, tail]
+
+
+def get_transformed_points(NED_translation: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
+    """
+    Given a rotation matrix and translation, returns the points of the uav rotated into that frame
+
+    :params NED_translation: the translation of the points in NED form [n, e, d].
+    :params rotation_matrix: the rotation matix to rotate as np array
+
+    :return: returns the plane points in the rotated frame
+    """
+
+    tf_points = np.copy(points)
+
+    #Translate points and rotate points
+    for i in range(0, len(tf_points)):
+
+        # rotate points
+
+        tmp_n = tf_points[i][0]
+        tmp_e = tf_points[i][1]
+        tmp_d = tf_points[i][2]
+
+        tmp_vec = np.array([[tmp_n, tmp_e, tmp_d]]).T
+        tmp_vec = rotation_matrix @ tmp_vec
+
+        tmp_point = [tmp_vec.item(0), tmp_vec.item(1), tmp_vec.item(2)]
+
+        tf_points[i] = tmp_point
+
+        tf_points[i] = tf_points[i] - NED_translation # translate points
+
+
+    return tf_points
+
+
+
+
+if __name__ == '__main__':
+
+        phi = np.pi / 2
+        theta = np.pi / 2
+        psi = 0
+
+        rotation = Euler2Rotation(phi, theta, psi)
+
+        tf = np.array([-1,-1,-1])
+
+        print(get_transformed_points(tf,rotation))

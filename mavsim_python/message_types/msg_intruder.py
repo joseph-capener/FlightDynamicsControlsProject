@@ -11,5 +11,5 @@ class MsgIntruder:
         self.radar_e = 0  # radar east
         self.radar_h = 0  # radar altitude
         self.radar_Vg = 0  # numerical derivative of position (dP/dt)
-        self.radar_course = 0  # gps course angle
-        self.radar_flight_path = 0 # radar flight path
+        self.radar_course = 0  # gps course angle      (chi)
+        self.radar_flight_path = 0 # radar flight path (gamma)

@@ -14,6 +14,7 @@ import pyqtgraph.opengl as gl
 import pyqtgraph.Vector as Vector
 from viewers.draw_mav import DrawMav
 from viewers.draw_path import DrawPath
+from viewers.draw_bullet import DrawBullet
 from viewers.draw_waypoints import DrawWaypoints
 
 from qtpy import QtCore, QtGui, QtWidgets
@@ -37,15 +38,22 @@ class MavViewer():
         # center.setZ(0)
         # self.window.setCameraPosition(pos=center, distance=self.scale, elevation=50, azimuth=-90)
         self.window.noRepeatKeys.append(QtCore.Qt.Key.Key_Space)
+        self.window.noRepeatKeys.append(QtCore.Qt.Key.Key_Backslash)
         self.window.follow_key = QtCore.Qt.Key.Key_Space
+        self.window.fire_bullet = QtCore.Qt.Key.Key_Backslash
         self.window.show()  # display configured window
         # self.window.raise_() # bring window to the front
 
         self.plot_initialized = [False] * aircraft # has the mav been plotted yet?
         self.mav_plot = []
+        self.numBullets = 20
+        self.bullet_plot = [None] * 20
+        self.bullet_initialized = [False] * self.numBullets
+        self.curr_bullet_id = 0
         self.path_plot = []
         self.waypoint_plot = []
         self.follow_key_pressed = False
+        self.bullet_key_pressed = False
         self.follow_id = 0
 
     def update(self, state, path, waypoints, id):
@@ -60,6 +68,7 @@ class MavViewer():
         # else update drawing on all other calls to update()
         else:
             self.mav_plot[id].update(state)
+            #self.bullet_plot[id].update(state) # Modify to update not based on aircraft state but set velocity
             if waypoints.flag_waypoints_changed:
                 self.waypoint_plot[id].update(waypoints)
                 waypoints.flag_waypoints_changed = False
@@ -80,7 +89,24 @@ class MavViewer():
         if self.window.follow_key not in self.window.keysPressed:
             self.follow_key_pressed = False
             
+    def update_bullet(self, state, time_step, bullet_id):
+        if self.window.fire_bullet in self.window.keysPressed and self.bullet_key_pressed == False and self.curr_bullet_id < 20:
+            self.bullet_plot[self.curr_bullet_id] = DrawBullet(state,self.window)
+            self.bullet_key_pressed = True
+            self.bullet_initialized[self.curr_bullet_id] = True
+            self.curr_bullet_id += 1
+        if self.window.fire_bullet not in self.window.keysPressed:
+            self.bullet_key_pressed = False
+
+        #print(self.bullet_initialized)
+        if self.bullet_initialized[bullet_id] == True:
+            #print('works')
+            if self.bullet_plot[bullet_id].isDead:
+                self.bullet_initialized[bullet_id] = False
+            else:
+                self.bullet_plot[bullet_id].update(time_step)
             
+                #self.bullet_initialized[bullet_id] = False
         
         # redraw
     

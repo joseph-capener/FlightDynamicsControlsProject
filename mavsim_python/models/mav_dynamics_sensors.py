@@ -403,6 +403,7 @@ class MavDynamics:
 
         self.pos_2past = self.pos_1past
         self.pos_1past = self.pos_intruder
+        return self.other_state
 
     def _update_true_state(self):
         # update the class structure for the true state:
