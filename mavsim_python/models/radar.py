@@ -4,6 +4,9 @@ sys.path.append('..')
 import numpy as np
 import matplotlib.pyplot as plt
 
+for i in range(0,20):
+    print(np.random.normal(300,5))
+
 # Speed of light in meters per second
 c = 299792458
 

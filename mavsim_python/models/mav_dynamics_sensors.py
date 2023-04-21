@@ -49,7 +49,7 @@ class MavDynamics:
                                [0.],   # (14)
                                ])
         self.other_state = MsgIntruder()
-        self.pos = np.zeros(3)
+        self.pos_intruder = np.zeros(3)
         self.pos_1past = np.zeros(3)
         self.pos_2past = np.zeros(3)
         # store wind data for fast recall since it is used at various points in simulation
@@ -370,18 +370,25 @@ class MavDynamics:
         # intruder_state = [pn, pe, h, Vg, chi, gamma] (USING MSGSTATE)
 
         # The assumption made is that a ground station with radar capabilities is relaying these intruder states to the follower
-        radar_frequency = 100 # TODO: Determine radar frequency: (400 MHz : 36 GHz) Current sim frequency is 100 Hz. This is a conflict.
-                                # Frequency will only need to be as high as is required to properly predict Vg, chi, and gamma. However, 
-                                # 100 Hz frequency will probably be too low.
-        dt = 1/radar_frequency # Time inbetween updated radar position data
+        # radar_frequency = 100 # TODO: Determine radar frequency: (400 MHz : 36 GHz) Current sim frequency is 100 Hz. This is a conflict.
+        #                         # Frequency will only need to be as high as is required to properly predict Vg, chi, and gamma. However, 
+        #                         # 100 Hz frequency will probably be too low.
+        # dt = 1/radar_frequency # Time inbetween updated radar position data
         
-        self.other_state.radar_n = intruder_state.north # pn
-        self.other_state.radar_e = intruder_state.east # pe
-        self.other_state.radar_h = intruder_state.altitude # h
-        self.pos = np.array([[self.other_state.radar_n],[self.other_state.radar_e],[self.other_state.radar_h]])
+        radar_accuracy = 3 # TODO Adjust to realistic range of accuracy
+
+        self.other_state.radar_n = np.random.normal(intruder_state.north,radar_accuracy) # pn
+        self.other_state.radar_e = np.random.normal(intruder_state.east,radar_accuracy) # pe
+        self.other_state.radar_h = np.random.normal(intruder_state.altitude,radar_accuracy*1.5) # h
+        
+        self.pos_intruder = np.array([[self.other_state.radar_n],[self.other_state.radar_e],[self.other_state.radar_h]])
+        # follower_pos = np.array([[self.true_state.north],[self.true_state.east],[self.true_state.altitude]])
+        # range_vec = self.pos_intruder-follower_pos
+        # distance = np.linalg.norm(range_vec)
+        # angle = range_vec.item(0)
         #Implemented state estimation (might be better to create funciton)
         dPdt = np.zeros(3)
-        dPdt = (self.pos - self.pos_2past)/(2*self._ts_simulation)
+        dPdt = (self.pos_intruder - self.pos_2past)/(2*self._ts_simulation)
         Vg = np.linalg.norm(dPdt)
         gamma = -np.arcsin(dPdt.item(2)/Vg)
         chi = np.arctan2(dPdt.item(1), dPdt.item(0))
@@ -395,7 +402,7 @@ class MavDynamics:
         # print('Gamma Actual:',intruder_state.gamma,'Gamma Estimated:',gamma)
 
         self.pos_2past = self.pos_1past
-        self.pos_1past = self.pos
+        self.pos_1past = self.pos_intruder
 
     def _update_true_state(self):
         # update the class structure for the true state:

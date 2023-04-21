@@ -41,7 +41,7 @@ SENSOR_PLOTS = False
 ANIMATION = True
 SAVE_PLOT_IMAGE = False
 COMPUTE_MODEL = False
-NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER #TODO: Currently does not work for more than 1 follower and 1 intruder
+NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER
 
 # video initialization
 if VIDEO is True:
@@ -75,6 +75,9 @@ waypoints.add(np.array([[10000, 0, -300]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[0, -10000, -600]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf, 0, 0)
 
+
+
+
 ###############
 
 
@@ -88,6 +91,8 @@ estimated_state = [None] * NUM_AIRCRAFT  # estimate states from measurements
 delta           = [None] * NUM_AIRCRAFT
 commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
+
+
 
  
 mav[0]._state[0] = -300. 
@@ -109,7 +114,7 @@ Va_command = [Signals(dc_offset=25.0,
                      start_time=2.0,
                      frequency = 0.01)]
 h_command = [Signals(dc_offset=100.0,
-                    amplitude=0.0,
+                    amplitude=20.0,
                     start_time=0.0,
                     frequency=0.02),
              Signals(dc_offset=100.0,
@@ -208,9 +213,8 @@ while sim_time < end_time:
         
         mav[id].update(delta[id], current_wind[id])  # propagate the MAV dynamics
 
-        if id == NUM_AIRCRAFT-1: # TODO: Currently does not work for multiple intruders/followers, must fix
-            for i in range(NUM_AIRCRAFT-1):
-                mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
+        if id == 1:
+            mav[1].getIntruderState(mav[0].true_state)
 
     # -------- update viewer -------------
         if ANIMATION:

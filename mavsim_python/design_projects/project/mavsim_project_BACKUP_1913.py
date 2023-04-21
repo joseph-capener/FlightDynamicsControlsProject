@@ -75,6 +75,9 @@ waypoints.add(np.array([[10000, 0, -300]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[0, -10000, -600]]).T, Va, np.radians(45), np.inf, 0, 0)
 waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf, 0, 0)
 
+
+
+
 ###############
 
 
@@ -89,11 +92,17 @@ delta           = [None] * NUM_AIRCRAFT
 commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
+<<<<<<< HEAD
+mav[1]._state[1] = 35. # Offset aircraft
+=======
+
+
  
 mav[0]._state[0] = -300. 
 mav[0]._state[1] = -200.
 mav[0]._state[2] = -100. 
 # mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
+>>>>>>> dev-controller
 
 
 # autopilot commands
