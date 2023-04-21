@@ -103,7 +103,8 @@ current_wind    = [None] * NUM_AIRCRAFT
 mav[0]._state[0] = -300. 
 mav[0]._state[1] = -200.
 mav[0]._state[2] = -100. 
-# mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
+# mav[0]._state[6:10] = Euler2Quaternion(0., )
+mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
 
 
 # autopilot commands

@@ -20,7 +20,7 @@ class AutopilotSD:
         # Boolean Value to determine if the enemy is within view.
         self.canSeeTarget = False
         
-        self.cam = Simulated_Camera(1 ,np.array([300,300]), np.array([10,10]), np.array([90., 90.]))
+        self.cam = Simulated_Camera(1 ,np.array([300,300]), np.array([10,10]), np.array([60.,60.]))
         
     def update(self, radar_states_list: list[MsgIntruder]):
         # distances to each mav
@@ -28,7 +28,7 @@ class AutopilotSD:
         
         myState   = self.mav_list[self.id].true_state
         self.cam.set_pose(np.array([[myState.north, myState.east, -myState.altitude]]).T, 
-                          np.array([[myState.phi, myState.theta, -myState.psi]]).T)
+                          np.array([[myState.phi, myState.theta, myState.psi,]]).T)
         
         # get the distance to each other target based on radar data
         for i in range(len(radar_states_list)):
@@ -108,9 +108,18 @@ class AutopilotSD:
         commands.altitude_command = -pos1.item(2)
         
         if self.cam.is_in_field_of_view(pos1):
-            print("TRUE")
-        else:
-            print("FALSE")
+            # print("IN FOV")
+            
+            
+            
+            pass
+            
+            # Find true angles
+            # project ahead of enemy
+            # Shoot BULLETS :O :O :O :O
+            
+        # else:
+        #     print("FALSE")
 
         return commands
     

@@ -34,8 +34,8 @@ class Simulated_Camera:
         else:
             xangle = np.deg2rad(field_of_view.item(0))
             yangle = np.deg2rad(field_of_view.item(1))
-            self.image_size = np.array([2 * np.tan(xangle / 2),  2 * np.tan(yangle / 2)])
-
+            self.image_size = np.array([self.focal_distance * np.tan(xangle / 2), self.focal_distance * np.tan(yangle / 2)])
+            # print(self.image_size)
         self.pin_hole = Pinhole_Camera(self.focal_distance)
 
         self.image = np.zeros((resolution.item(0), resolution.item(1)), dtype=int)
@@ -61,28 +61,33 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = R__i_to_c @ obj_position
+        position_cam_frame = obj_position - self.position
+        
+        position_cam_frame =np.array([[0., 1., 0.],
+                                      [0., 0., 1.],
+                                      [1., 0., 0.]]) @ R__i_to_c @ position_cam_frame
 
-        position_cam_frame = position_cam_frame - self.position
+        # position_cam_frame = R__i_to_c @ obj_position
+        # position_cam_frame = position_cam_frame - self.position
 
         x_0 = position_cam_frame.item(0)
         y_0 = position_cam_frame.item(1)
         z_0 = position_cam_frame.item(2)
 
+        x_i = self.pin_hole.single_dimension_projection(x_0, z_0)
+        y_i = self.pin_hole.single_dimension_projection(y_0, z_0)
+
+        # print(x_i, y_i, x_0, self.image_size)
         # Check if object is behind focal
 
         if z_0 <= 0:
-            
             return False
         
 
         # check if the object is out of the field of view of the image plane
         # (based on image size)
-        x_i = self.pin_hole.single_dimension_projection(x_0, z_0)
-        y_i = self.pin_hole.single_dimension_projection(y_0, z_0)
 
         if abs(x_i) > self.image_size.item(0) or abs(y_i) > self.image_size.item(1):
-
             return False
 
         return True 
