@@ -42,6 +42,7 @@ ANIMATION = True
 SAVE_PLOT_IMAGE = False
 COMPUTE_MODEL = False
 NUM_AIRCRAFT = 2 #PLANE 1 IS FOLLOWER AND PLANE 0 IS INTRUDER #TODO: Currently does not work for more than 1 follower and 1 intruder
+NUM_BULLETS = 20
 
 # video initialization
 if VIDEO is True:
@@ -194,7 +195,7 @@ while sim_time < end_time:
             
             commands.altitude_command = mav[1].true_state.altitude
             autopilot_commands = commands
-            print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
+            #print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
             
             
             
@@ -221,6 +222,12 @@ while sim_time < end_time:
         if ANIMATION:
             # for id in range(NUM_AIRCRAFT):    
             mav_view.update(mav[id].true_state, path, waypoints, id)  # plot body of MAV
+            
+    #for bullet_id in range(NUM_BULLETS):
+    if ANIMATION:
+        for bullet_id in range(NUM_BULLETS):
+            mav_view.update_bullet(mav[0].true_state, time_step = SIM.ts_simulation, bullet_id = bullet_id)
+        
         
     if DATA_PLOTS:
         plot_time = sim_time
