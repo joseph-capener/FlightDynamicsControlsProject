@@ -168,12 +168,10 @@ while sim_time < end_time:
         
         
         if id == 0 and sim_time != 0:
-            N = 4
-            
-            Bspeed = 370 # m / s
             
             pos0 = np.array([[mav[0].true_state.north , mav[0].true_state.east , -mav[0].true_state.altitude]]).T
             vel0 = mav[0].true_state.Va * Euler2Rotation(0., 0., mav[0].true_state.chi) @ np.array([[1., 0., 0.]]).T
+            
             pos1 = np.array([[mav[1].true_state.north , mav[1].true_state.east , -mav[1].true_state.altitude]]).T
             vel1 = mav[1].true_state.Va * Euler2Rotation(0., 0., mav[1].true_state.chi) @ np.array([[1., 0., 0.]]).T
             
