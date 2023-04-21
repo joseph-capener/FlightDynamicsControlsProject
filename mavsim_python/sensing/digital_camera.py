@@ -54,7 +54,9 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = R__i_to_c @ (obj_position - self.position)
+        position_cam_frame = R__i_to_c @ obj_position
+
+        position_cam_frame = position_cam_frame - self.position
 
         x_0 = position_cam_frame.item(0)
         y_0 = position_cam_frame.item(1)
@@ -99,6 +101,8 @@ class Simulated_Camera:
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
         position_cam_frame = R__i_to_c @ obj_position
+        
+        position_cam_frame = position_cam_frame - self.position
 
         z_0 = position_cam_frame.item(2)
 
