@@ -10,6 +10,8 @@ from pinhole_camera import *
 import mav_points
 import cv2 as cv
 
+from mav_points import *
+
 class Simulated_Camera:
 
     def __init__(self, focal_distance: float, resolution: np.ndarray, image_size: np.ndarray) -> None:
@@ -52,7 +54,7 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = R__i_to_c @ obj_position
+        position_cam_frame = R__i_to_c @ (obj_position - self.position)
 
         x_0 = position_cam_frame.item(0)
         y_0 = position_cam_frame.item(1)
@@ -175,12 +177,10 @@ class Simulated_Camera:
         Given an object's position, returns an mask image with the object. Assumes object is a sphere
 
         :param obj_position: the 3d intertial position of the object in the 
-        the from [[n],[e],[d]] or similar
+        the from [n,e,d]
+
         :param radius: the radius of the object in meters
 
-        :param obj_position: the 3d intertial position of the object in the 
-        the form [[n],[e],[d]] or similar
-        
         :param obj_orientation: the 3d rotation of the mav in the inertial frame expressed
         as a quaternion in the form [e0, e1, e2, e3] or similar.
 
@@ -189,15 +189,18 @@ class Simulated_Camera:
 
         mask = np.zeros(self.resolution)
 
-        # rotate all the points on the mav
+        rotation = Quaternion2Rotation(obj_orientation)
 
-        # find the difference of all the points of the mav
+        drone_points = get_transformed_points(obj_position, rotation)
 
-        # project all points into the image frame
+        drone_image_points = np.array([])
 
-        # convert all points 
+        for i in range(0, len(drone_image_points)):
 
-        # somehow solve the edge case problem?
+            pointeroo = drone_image_points[i]
+
+            image_point = 0 
+
 
         return mask
 
@@ -252,7 +255,7 @@ class Simulated_Camera:
         pass
 
     
-    def _image_index(point: np.ndarray, image_size: np.ndarray) -> np.ndarray:
+    def _image_index(point: np.ndarray, image_size: np.ndarray, image_resolution: np.ndarray) -> np.ndarray:
         """
         Takes in the location of a point in the image frame and outputs the image 
         index 
@@ -263,12 +266,24 @@ class Simulated_Camera:
         :return: mask location of point in form [i,j] or simlar
         """
 
-        pass
+        axis_origin = image_resolution / 2.
 
-    
 
-    
-    
+        for i in range(0, len(axis_origin)): 
+            
+            axis_origin[i] = int(axis_origin[i])
+
+        # conversion factor of displacement in length to pixels
+        loc_to_pix_x = image_resolution.item(0) / image_size.item(0)   
+        loc_to_pix_y = image_resolution.item(0) / image_size.item(0)
+
+        d_pix_x = int(point.item(0) *  loc_to_pix_x)
+        d_pix_y = int(point.item(0) *  loc_to_pix_y)
+
+        i = d_pix_x + axis_origin[0]
+        j = -d_pix_y + axis_origin[1]
+
+        return np.array([i,j])
 
     
 
