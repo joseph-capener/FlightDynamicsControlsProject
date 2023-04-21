@@ -6,15 +6,15 @@ import numpy as np
 from sys import path
 path.append('..')
 from tools.rotations import *
-from pinhole_camera import *
-import mav_points
+from sensing.pinhole_camera import *
+# import sensing.mav_points
 import cv2 as cv
 
-from mav_points import *
+from sensing.mav_points import *
 
 class Simulated_Camera:
 
-    def __init__(self, focal_distance: float, resolution: np.ndarray, image_size: np.ndarray) -> None:
+    def __init__(self, focal_distance: float, resolution: np.ndarray, image_size: np.ndarray, field_of_view=None) -> None:
         """
         Initializes the Camera Simulator
 
@@ -25,9 +25,16 @@ class Simulated_Camera:
         :return: None
         """
         
+        
         self.focal_distance = focal_distance
         self.resolution = resolution
-        self.image_size = image_size
+        
+        if type(field_of_view) == type(None):
+            self.image_size = image_size
+        else:
+            xangle = np.deg2rad(field_of_view.item(0))
+            yangle = np.deg2rad(field_of_view.item(1))
+            self.image_size = np.array([2 * np.tan(xangle / 2),  2 * np.tan(yangle / 2)])
 
         self.pin_hole = Pinhole_Camera(self.focal_distance)
 

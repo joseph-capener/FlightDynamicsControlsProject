@@ -6,6 +6,9 @@ from message_types.msg_intruder import MsgIntruder
 from message_types.msg_autopilot import MsgAutopilot
 from tools.rotations import *
 
+from sensing.digital_camera import Simulated_Camera
+
+
 class AutopilotSD:
     def __init__(self, id: int, mavs: list) -> None:
         # List of mav players in the world
@@ -17,13 +20,18 @@ class AutopilotSD:
         # Boolean Value to determine if the enemy is within view.
         self.canSeeTarget = False
         
+        self.cam = Simulated_Camera(1 ,np.array([300,300]), np.array([10,10]), np.array([90., 90.]))
+        
     def update(self, radar_states_list: list[MsgIntruder]):
         # distances to each mav
         distances =  []
-        myState   = self.mav_list[id].true_state
+        
+        myState   = self.mav_list[self.id].true_state
+        self.cam.set_pose(np.array([[myState.north, myState.east, -myState.altitude]]).T, 
+                          np.array([[myState.phi, myState.theta, -myState.psi]]).T)
         
         # get the distance to each other target based on radar data
-        for i in range(len(self.mav_list)):
+        for i in range(len(radar_states_list)):
             # temp variable for calculation
             temp_distance  = np.inf # our own mav is given a distance of infinity 
                                     # so that it doesn't pick itself as target
@@ -31,9 +39,9 @@ class AutopilotSD:
             # if the mav is not ourselves
             if not i == self.id:
                 # get their position
-                other_pos = np.array([[radar_states_list[i].north, 
-                                       radar_states_list[i].east, 
-                                       -radar_states_list[i].altitude]]).T
+                other_pos = np.array([[radar_states_list[i].radar_n, 
+                                       radar_states_list[i].radar_e, 
+                                       -radar_states_list[i].radar_h]]).T
                 # get our position
                 my_pos    = np.array([[myState.north, 
                                        myState.east, 
@@ -48,10 +56,15 @@ class AutopilotSD:
         self.targetId = np.argmin(np.array(distances))
         
         cmd = self.get_autopilot_CMD(radar_states_list)
+        
+        return cmd
 
     def get_autopilot_CMD(self, radar_states_list: list[MsgIntruder]):
+        
+        commands = MsgAutopilot()
+        
         # Get our state
-        myState   = self.mav_list[id].true_state
+        myState   = self.mav_list[self.id].true_state
         
         # Get our position
         pos0    = np.array([[myState.north, 
@@ -59,9 +72,9 @@ class AutopilotSD:
                             -myState.altitude]]).T
         
         # get our velocity vector
-        vel0 = myState.true_state.Va * Euler2Rotation(myState.true_state.phi, 
-                                                      myState.true_state.theta, 
-                                                      myState.true_state.psi) @ np.array([[1., 0., 0.]]).T
+        vel0 = myState.Va * Euler2Rotation(myState.phi, 
+                                                      myState.theta, 
+                                                      myState.psi) @ np.array([[1., 0., 0.]]).T
         
         pos1 = np.array([[radar_states_list[self.targetId].radar_n, 
                           radar_states_list[self.targetId].radar_e, 
@@ -78,9 +91,31 @@ class AutopilotSD:
                                       myState.theta, 
                                       myState.psi).T @ R
         
+        Relative_Angle = np.arctan2(Relative_Pos[1], Relative_Pos[0])[0]
+        while Relative_Angle > 2 * np.pi:
+            Relative_Angle -= 2*np.pi
+        while Relative_Angle < -2 * np.pi:
+            Relative_Angle += 2*np.pi
         
+        Inertial_Course = np.arctan2(R[1], R[0])[0]
+        while Inertial_Course > 2 * np.pi:
+            Inertial_Course -= 2*np.pi
+        while Inertial_Course < -2 * np.pi:
+            Inertial_Course += 2*np.pi
         
+        commands.course_command   = Inertial_Course
+        commands.airspeed_command = 28.
+        commands.altitude_command = -pos1.item(2)
         
+        if self.cam.is_in_field_of_view(pos1):
+            print("TRUE")
+        else:
+            print("FALSE")
+
+        return commands
+    
+    
+    
         # target = pos1 + vel1 / np.linalg.norm(vel1) * 5.0
         # R_t = target - pos0
         # target_angle = 40

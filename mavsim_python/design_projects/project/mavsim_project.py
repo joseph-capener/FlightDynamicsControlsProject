@@ -14,6 +14,9 @@ from tools.signals import Signals
 from models.mav_dynamics_sensors import MavDynamics
 from models.wind_simulation import WindSimulation
 from controlsys.autopilot import Autopilot
+
+from controlsys.autopilot_search_and_destroy import AutopilotSD
+
 from estimation.observer import Observer
 # from estimation.observer_full import Observer
 from viewers.mav_viewer_multi import MavViewer
@@ -82,7 +85,9 @@ waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf,
 
 
 wind = [WindSimulation(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
-mav = [MavDynamics(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]    
+mav = [MavDynamics(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
+
+autopilotSD = AutopilotSD(0, mav)  
 autopilot = [Autopilot(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]
 observer = [Observer(SIM.ts_simulation) for i in range(NUM_AIRCRAFT)]   
 
@@ -152,6 +157,13 @@ while sim_time < end_time:
     # commands.course_command   = chi_command.polynomial(sim_time)
     #commands.altitude_command = h_command.polynomial(sim_time)
 
+    # =============DO RADAR STUFF==========
+    # if id == NUM_AIRCRAFT-1: # TODO: Currently does not work for multiple intruders/followers, must fix
+    # for i in range(NUM_AIRCRAFT):
+    #     mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
+    radar_states = []
+    for i in range(NUM_AIRCRAFT):
+        radar_states.append(mav[i].getIntruderState(mav[i].true_state))
     # -------- autopilot -------------
     for id in range(NUM_AIRCRAFT):
         # commands.airspeed_command = Va_command[id].polynomial(sim_time)
@@ -167,34 +179,37 @@ while sim_time < end_time:
         autopilot_commands = path_follower[id].update(path, mav[id].true_state)
         
         
+        
+        
         if id == 0 and sim_time != 0:
             
-            pos0 = np.array([[mav[0].true_state.north , mav[0].true_state.east , -mav[0].true_state.altitude]]).T
-            vel0 = mav[0].true_state.Va * Euler2Rotation(0., 0., mav[0].true_state.chi) @ np.array([[1., 0., 0.]]).T
+            # pos0 = np.array([[mav[0].true_state.north , mav[0].true_state.east , -mav[0].true_state.altitude]]).T
+            # vel0 = mav[0].true_state.Va * Euler2Rotation(0., 0., mav[0].true_state.chi) @ np.array([[1., 0., 0.]]).T
             
-            pos1 = np.array([[mav[1].true_state.north , mav[1].true_state.east , -mav[1].true_state.altitude]]).T
-            vel1 = mav[1].true_state.Va * Euler2Rotation(0., 0., mav[1].true_state.chi) @ np.array([[1., 0., 0.]]).T
+            # pos1 = np.array([[mav[1].true_state.north , mav[1].true_state.east , -mav[1].true_state.altitude]]).T
+            # vel1 = mav[1].true_state.Va * Euler2Rotation(0., 0., mav[1].true_state.chi) @ np.array([[1., 0., 0.]]).T
             
-            R = pos1 - pos0
-            V = vel1 - vel0
+            # R = pos1 - pos0
+            # V = vel1 - vel0
             
             
-            target = pos1 + vel1 / np.linalg.norm(vel1) * 5.0
-            R_t = target - pos0
-            target_angle = 40
+            # target = pos1 + vel1 / np.linalg.norm(vel1) * 5.0
+            # R_t = target - pos0
+            # target_angle = 40
             
-            ang0 = np.arctan2(R[1] , R[0]) + np.sign(np.arctan2(R[1] , R[0])) * np.deg2rad(-target_angle)
-            # ang0 = np.arctan2(R_t[1] , R_t[0]) - np.sign(np.arctan2(R_t[1] , R_t[0])) * np.deg2rad(target_angle) # PROJECTILE EXTRAPOLATION
-            # ang0 = np.arctan2(R_t[1] , R_t[0]) # This is for leading the enemy
+            # ang0 = np.arctan2(R[1] , R[0]) + np.sign(np.arctan2(R[1] , R[0])) * np.deg2rad(-target_angle)
+            # # ang0 = np.arctan2(R_t[1] , R_t[0]) - np.sign(np.arctan2(R_t[1] , R_t[0])) * np.deg2rad(target_angle) # PROJECTILE EXTRAPOLATION
+            # # ang0 = np.arctan2(R_t[1] , R_t[0]) # This is for leading the enemy
             
-            commands.course_command = ang0[0]
-            commands.airspeed_command = mav[1].true_state.Va + (target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0]))[0])) / target_angle # CONSTANT FLYING ANGLE
+            # commands.course_command = ang0[0]
+            # commands.airspeed_command = mav[1].true_state.Va + (target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0]))[0])) / target_angle # CONSTANT FLYING ANGLE
             
-            # commands.airspeed_command = mav[1].true_state.Va + 10
+            # # commands.airspeed_command = mav[1].true_state.Va + 10
             
-            commands.altitude_command = mav[1].true_state.altitude
+            # commands.altitude_command = mav[1].true_state.altitude
+            commands = autopilotSD.update(radar_states)
             autopilot_commands = commands
-            print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
+            # print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
             
             
             
@@ -210,12 +225,6 @@ while sim_time < end_time:
         current_wind[id] = wind[id].update()  # get the new wind vector
         
         mav[id].update(delta[id], current_wind[id])  # propagate the MAV dynamics
-
-        if id == NUM_AIRCRAFT-1: # TODO: Currently does not work for multiple intruders/followers, must fix
-            for i in range(NUM_AIRCRAFT-1):
-                mav[-1].getIntruderState(mav[i].true_state) # TODO:Replace with estimated states (radar or optic)
-
-        
 
     # -------- update viewer -------------
         if ANIMATION:
