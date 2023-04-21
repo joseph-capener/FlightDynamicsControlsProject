@@ -172,9 +172,9 @@ class Simulated_Camera:
 
         self.image = np.zeros((self.resolution.item(0), self.resolution.item(1)))
 
-        location = self.get_image_location(obj_position)
+        location = -1 * self.get_image_location(obj_position)
 
-        rad_i = self.get_image_size(obj_position, radius)
+        rad_i = -1 * self.get_image_size(obj_position, radius)
 
         x_step = self.image_size.item(0) / self.resolution.item(0)
         y_step = self.image_size.item(1) / self.resolution.item(1)
@@ -182,13 +182,14 @@ class Simulated_Camera:
         x_location = location.item(0) / x_step
         y_location = location.item(1) / x_step
         
-        loc = (int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2))
+        loc = [int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2)]
         rad = int(rad_i / x_step)
         
         print(loc)
-        if loc[0] >= 0 and loc[1] >= 0:
-            cv.circle(img=self.image, center=loc, radius=rad, color=(255, 255, 255), thickness=-1)
-
+        if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0) and loc[1] < self.resolution.item(1):
+            print(loc, rad)
+            cv.circle(img=self.image, center=(loc[0], loc[1]), radius=rad, color=(255, 255, 255), thickness=-1)
+        
         # for j in range(0, len(self.image)):
 
         #     for i in (range(0, len(self.image[0]))):
