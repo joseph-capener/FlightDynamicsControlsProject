@@ -232,7 +232,7 @@ class AutopilotSD:
             
             if self.fireTimer > 0.5 and np.abs(np.rad2deg(myState.chi - newCourse)) < 1.:
                 self.fireTimer = 0
-                print("SHOOT")
+                #print("SHOOT")
                 self.isFiring = True
             
         return commands

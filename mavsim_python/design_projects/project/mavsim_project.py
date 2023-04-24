@@ -215,6 +215,7 @@ while sim_time < end_time:
             
             
             
+            
             # print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
             # print("SPEED= ",commands.airspeed_command)
             # print((target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0])))[0]))
@@ -236,7 +237,7 @@ while sim_time < end_time:
     #for bullet_id in range(NUM_BULLETS):
     if ANIMATION:
         for bullet_id in range(NUM_BULLETS):
-            mav_view.update_bullet(mav[0].true_state, time_step = SIM.ts_simulation, bullet_id = bullet_id)
+            mav_view.update_bullet(mav[0].true_state, time_step = SIM.ts_simulation, bullet_id = bullet_id, isFiring = autopilotSD.isFiring)
         
         
     if DATA_PLOTS:
