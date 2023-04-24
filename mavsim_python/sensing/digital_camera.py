@@ -185,11 +185,13 @@ class Simulated_Camera:
         loc = [int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2)]
         rad = int(rad_i / x_step)
         
-        print(loc)
-        if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0) and loc[1] < self.resolution.item(1):
-            print(loc, rad)
+        # print(loc)
+        # cv.rectangle(img=self.image, pt1=(0,0), pt2=(self.resolution.item(0), self.resolution.item(1)), color=(0, 0, 0), thickness=-1)
+        if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0)-1 and loc[1] < self.resolution.item(1)-1:
+            # print(loc, rad)
             cv.circle(img=self.image, center=(loc[0], loc[1]), radius=rad, color=(255, 255, 255), thickness=-1)
         
+            
         # for j in range(0, len(self.image)):
 
         #     for i in (range(0, len(self.image[0]))):
@@ -204,6 +206,19 @@ class Simulated_Camera:
         #             self.image[j][i] = 1
 
         return self.image
+    
+    def pixel_to_vector_dir(self, pixel: np.ndarray) -> np.ndarray:
+        
+        px = pixel.item(0)
+        py = pixel.item(1)
+        x_step = self.image_size.item(0) / self.resolution.item(0)
+        y_step = self.image_size.item(1) / self.resolution.item(1)
+        locx = (px - self.resolution.item(0)/2) * x_step
+        locy = (py - self.resolution.item(1)/2) * y_step
+        locz = self.focal_distance
+        
+        return np.array([locx, locy, locz])
+        
     
     def draw_mav(self, obj_position:np.ndarray, obj_orientation:np.ndarray) -> np.ndarray:     
         """

@@ -75,9 +75,9 @@ waypoints.type = 'fillet'
 # waypoints.type = 'dubins'
 Va = PLAN.Va0
 waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
-waypoints.add(np.array([[10000, 0, -300]]).T, Va, np.radians(45), np.inf, 0, 0)
-waypoints.add(np.array([[0, -10000, -600]]).T, Va, np.radians(45), np.inf, 0, 0)
-waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf, 0, 0)
+waypoints.add(np.array([[10000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[0, -10000, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[10000, -10000, -100]]).T, Va, np.radians(-135), np.inf, 0, 0)
 
 ###############
 
@@ -99,8 +99,8 @@ commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
  
-mav[0]._state[0] = -300. 
-mav[0]._state[1] = 200.
+mav[0]._state[0] = 1000. 
+mav[0]._state[1] = -1000.
 mav[0]._state[2] = -50. 
 # mav[0]._state[6:10] = Euler2Quaternion(0., )
 mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
