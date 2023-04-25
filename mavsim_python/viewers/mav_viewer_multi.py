@@ -16,6 +16,7 @@ from viewers.draw_mav import DrawMav
 from viewers.draw_path import DrawPath
 from viewers.draw_bullet import DrawBullet
 from viewers.draw_waypoints import DrawWaypoints
+from viewers.draw_camera_fov import DrawFov
 
 from qtpy import QtCore, QtGui, QtWidgets
 
@@ -51,6 +52,7 @@ class MavViewer():
         self.bullet_initialized = [False] * self.numBullets
         self.curr_bullet_id = 0
         self.path_plot = []
+        self.fov_plot = []
         self.waypoint_plot = []
         self.follow_key_pressed = False
         self.bullet_key_pressed = False
@@ -64,10 +66,12 @@ class MavViewer():
             self.mav_plot.append(DrawMav(state, self.window, id))
             self.waypoint_plot.append(DrawWaypoints(waypoints, path.orbit_radius, blue, self.window))
             self.path_plot.append(DrawPath(path, red, self.window))
+            self.fov_plot.append(DrawFov(state, self.window))
             self.plot_initialized[id] = True
         # else update drawing on all other calls to update()
         else:
             self.mav_plot[id].update(state)
+            self.fov_plot[id].update(state)
             #self.bullet_plot[id].update(state) # Modify to update not based on aircraft state but set velocity
             if waypoints.flag_waypoints_changed:
                 self.waypoint_plot[id].update(waypoints)
