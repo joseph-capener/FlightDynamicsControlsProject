@@ -1,13 +1,13 @@
-
-
-
 import numpy as np
+from sys import path
+path.append('..')
 from message_types.msg_intruder import MsgIntruder
 from message_types.msg_autopilot import MsgAutopilot
 from tools.rotations import *
 
 from sensing.digital_camera import Simulated_Camera
 from sensing.cam_sim_viewer import CamSimViewer
+from sensing.mav_mask_viewer import MAVMaskViewer
 
 import parameters.simulation_parameters as SIM
 
@@ -23,9 +23,12 @@ class AutopilotSD:
         # Boolean Value to determine if the enemy is within view.
         self.canSeeTarget = False
         
-        self.cam = Simulated_Camera(1 ,np.array([300,300]), np.array([10,10]), np.array([60.,60.]))
+        self.cam = Simulated_Camera(1 ,np.array([900,900]), np.array([10,10]), np.array([60.,60.]))
+        self.mav_cam = Simulated_Camera(0.5 ,np.array([900,900]), np.array([3,3]))
         self.camView = CamSimViewer(self.cam)
-        
+        self.mavView = MAVMaskViewer(self.mav_cam)
+
+
         self.updateTimers = 0.
         
     def update(self, radar_states_list: list[MsgIntruder]):
@@ -34,6 +37,9 @@ class AutopilotSD:
         
         myState   = self.mav_list[self.id].true_state
         self.cam.set_pose(np.array([[myState.north, myState.east, -myState.altitude]]).T, 
+                          np.array([[myState.phi, myState.theta, myState.psi,]]).T)
+        
+        self.mav_cam.set_pose(np.array([[myState.north, myState.east, -myState.altitude]]).T, 
                           np.array([[myState.phi, myState.theta, myState.psi,]]).T)
         
         # get the distance to each other target based on radar data
@@ -85,6 +91,7 @@ class AutopilotSD:
         pos1 = np.array([[radar_states_list[self.targetId].radar_n, 
                           radar_states_list[self.targetId].radar_e, 
                           -radar_states_list[self.targetId].radar_h]]).T
+    
         
         vel1 = radar_states_list[self.targetId].radar_Vg * Euler2Rotation(0., 
                                                                           radar_states_list[self.targetId].radar_flight_path, 
@@ -119,6 +126,14 @@ class AutopilotSD:
             self.updateTimers += SIM.ts_simulation
             if self.updateTimers > 0.1:
                 self.camView.update(pos0, np.array([[myState.phi, myState.theta, myState.psi]]) , pos1)
+
+                t_phi = self.mav_list[1].true_state.phi
+                t_theta = self.mav_list[1].true_state.theta
+                t_psi = self.mav_list[1].true_state.psi
+
+                self.mavView.update(pos0, np.array([[myState.phi, myState.theta, myState.psi]]), 
+                                    pos1, np.array([t_phi, t_theta, t_psi]))
+
                 self.updateTimers = 0.
             pass
             

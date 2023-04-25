@@ -14,7 +14,6 @@ from tools.signals import Signals
 from models.mav_dynamics_sensors import MavDynamics
 from models.wind_simulation import WindSimulation
 from controlsys.autopilot import Autopilot
-
 from controlsys.autopilot_search_and_destroy import AutopilotSD
 
 from estimation.observer import Observer
@@ -30,10 +29,8 @@ from planning.path_follower import PathFollower
 from planning.path_manager import PathManager
 from planning.path_planner import PathPlanner
 from message_types.msg_waypoints import MsgWaypoints
+from message_types.msg_state import MsgState
 from tools.rotations import *
-from sensing.cam_sim_viewer import CamSimViewer
-
-waypoints = MsgWaypoints()
 
 
 quitter = QuitListener()
@@ -59,6 +56,7 @@ if ANIMATION or DATA_PLOTS or SENSOR_PLOTS:
     app = pg.QtWidgets.QApplication([]) # use the same main process for Qt applications
 if ANIMATION:
     mav_view = MavViewer(app=app, aircraft=NUM_AIRCRAFT)  # initialize the mav viewer
+
 if DATA_PLOTS:
     data_view = DataViewer(app=app,dt=SIM.ts_simulation, plot_period=SIM.ts_plot_refresh, 
                            data_recording_period=SIM.ts_plot_record_data, time_window_length=30)
@@ -180,9 +178,6 @@ while sim_time < end_time:
         # -------path follower-------------
         autopilot_commands = path_follower[id].update(path, mav[id].true_state)
         
-        
-        
-        
         if id == 0 and sim_time != 0:
             
             # pos0 = np.array([[mav[0].true_state.north , mav[0].true_state.east , -mav[0].true_state.altitude]]).T
@@ -232,7 +227,7 @@ while sim_time < end_time:
         if ANIMATION:
             # for id in range(NUM_AIRCRAFT):    
             mav_view.update(mav[id].true_state, path, waypoints, id)  # plot body of MAV
-            
+
     #for bullet_id in range(NUM_BULLETS):
     if ANIMATION:
         for bullet_id in range(NUM_BULLETS):
