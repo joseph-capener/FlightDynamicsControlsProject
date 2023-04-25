@@ -151,6 +151,27 @@ class Simulated_Camera:
         location_i = self.pin_hole.get_image_projection(np.array([[y_0, -z_0]]).T, x_0)
 
         return -1*location_i
+    
+    def get_image_location_rel(self, obj_position:np.ndarray) -> np.ndarray:
+        """
+        Given an object's position, finds its center locatioon in the image plane. Assumes the object is a sphere
+
+        :param obj_position: the 3d relative position of the object in the 
+        the from [[n],[e],[d]] or similar
+
+        :return: The object's location in the form [xi, yi]
+        """
+    
+        # Get the location of the object in the inertial plane
+        position_cam_frame = obj_position
+        x_0 = position_cam_frame.item(0)
+
+        y_0 = position_cam_frame.item(1)
+        z_0 = position_cam_frame.item(2)
+
+        location_i = self.pin_hole.get_image_projection(np.array([[y_0, -z_0]]).T, x_0)
+
+        return -1*location_i
 
 
     def get_image(self, obj_position:np.ndarray, radius: float) -> np.ndarray:
@@ -256,7 +277,7 @@ class Simulated_Camera:
         # Find the pixel location of the mav
         for i in range(0,len(relative_position)):
             
-            tf_points = self.get_image_location(relative_position[i])
+            tf_points = self.get_image_location_rel(relative_position[i])
 
             print(relative_position[i])
 

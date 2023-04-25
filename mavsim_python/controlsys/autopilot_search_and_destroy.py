@@ -152,8 +152,13 @@ class AutopilotSD:
             t_theta = self.mav_list[1].true_state.theta
             t_psi = self.mav_list[1].true_state.psi
 
-            self.mavView.update(mav_state, np.array([[myState.phi, myState.theta, myState.psi]]), 
+            m_phi = self.mav_list[0].true_state.phi
+            m_theta = self.mav_list[0].true_state.theta
+            m_psi = self.mav_list[0].true_state.psi
+
+            self.mavView.update(mav_state, np.array([[m_phi, m_theta, m_psi]]), 
                                 target_state, np.array([t_phi, t_theta, t_psi]))
+            
 
             self.updateTimers = 0.
             # get the gray img
