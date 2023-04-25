@@ -96,15 +96,15 @@ class DrawBullet:
         #   define the points on the aircraft following diagram Fig 2.14
         # TODO Fix geometry of bullets (see also meshS)
         points = np.array([[0, 0, 0],  # point 1 [0]
-                           [unit_length, unit_length/2, unit_length/4],  # point 2 [1]
-                           [unit_length, 0, 0],  # point 3 [2]
-                           [unit_length, 0, unit_length/2],  # point 4 [3]
-                           [unit_length/2, unit_length/2, 0],  # point 5 [4]
-                           [0, 0, unit_length/4],  # point 6 [5]
+                           [unit_length/2, unit_length/4, unit_length/4],  # point 3 [2]
+                           [unit_length/2, unit_length/4, -unit_length/4],  # point 4 [3]
+                           [unit_length/2, -unit_length/4, -unit_length/4],  # point 5 [4]
+                           [unit_length/2, -unit_length/4, unit_length/4],
+                           [unit_length, 0, 0],  # point 6 [5]
                            ]).T
 
         # scale points for better rendering
-        scale = 20
+        scale = 5
         points = scale * points
 
         #   define the colors for each face of triangular mesh
@@ -117,14 +117,15 @@ class DrawBullet:
         if self.color == 1:
             c = red
         
-        meshColors = np.empty((7, 3, 4), dtype=np.float32)
+        meshColors = np.empty((8, 3, 4), dtype=np.float32)
         meshColors[0] = yellow
         meshColors[1] = yellow
         meshColors[2] = yellow
         meshColors[3] = yellow
         meshColors[4] = yellow
         meshColors[5] = yellow
-        meshColors[6] = yellow 
+        meshColors[6] = yellow
+        meshColors[7] = yellow  
         return points, meshColors
 
     def points_to_mesh(self, points):
@@ -135,11 +136,12 @@ class DrawBullet:
         """
         points = points.T
         mesh = np.array([[points[0], points[1], points[2]],  # nose-top
-                         [points[2], points[0], points[3]],  # nose-right
-                         [points[3], points[2], points[4]],  # nose-bottom
-                         [points[4], points[3], points[5]],  # nose-left
-                         [points[5], points[3], points[0]],  # fuselage-left
-                         [points[0], points[1], points[5]],
-                         [points[5], points[4], points[2]],
+                         [points[0], points[2], points[3]],  # nose-right
+                         [points[0], points[3], points[4]],  # nose-bottom
+                         [points[0], points[4], points[1]],
+                         [points[5], points[1], points[2]],  # nose-top
+                         [points[5], points[2], points[3]],  # nose-right
+                         [points[5], points[3], points[4]],  # nose-bottom
+                         [points[5], points[4], points[1]],
                          ])
         return mesh

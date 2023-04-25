@@ -126,9 +126,6 @@ class AutopilotSD:
         while Inertial_Course < -2 * np.pi:
             Inertial_Course += 2*np.pi
         
-        
-        
-
         # ----CAMERA UPDATE----
         self.updateTimers += SIM.ts_simulation
         if self.updateTimers > 0.1:
@@ -162,9 +159,6 @@ class AutopilotSD:
             # update the camera
             self.camView.update_img(display_img)
         
-        
-        
-        
         ## State Machine for Tracking
         if self.tracking_SM == 0:
                 commands.course_command   = Inertial_Course
@@ -172,7 +166,7 @@ class AutopilotSD:
                 commands.altitude_command = -pos1.item(2)
                 
                 if self.onScreenFlag:
-                    self.tracking_SM = True
+                    self.tracking_SM = 1
                 
         elif self.tracking_SM == 1:
                 
@@ -190,8 +184,6 @@ class AutopilotSD:
                     course_from_cam   += 2 * np.pi
                     
                 altitude_angle_from_cam = -np.arctan(inertial_centroid[2]/np.linalg.norm(inertial_centroid[0:2]))
-                
-                
                 predicted_height = myState.altitude + np.tan(altitude_angle_from_cam) * np.linalg.norm(R[0:2])
                 
                 # print("diff, ", np.rad2deg(myState.theta - self.target_elevation))
@@ -205,11 +197,10 @@ class AutopilotSD:
                 if self.trackTimer > 5.0:
                     self.tracking_SM = 2
                     pass
-                
                 commands.course_command   = course_from_cam 
                 commands.airspeed_command = 28.
                 # commands.altitude_command = myState.altitude + (myState.alpha - self.target_elevation)*10
-                commands.altitude_command = myState.altitude + (predicted_height - myState.altitude)*SIM.ts_simulation  # essentially an alpha filter    
+                commands.altitude_command = myState.altitude + (predicted_height - myState.altitude)*SIM.ts_simulation    
                 
         elif self.tracking_SM == 2:
             
