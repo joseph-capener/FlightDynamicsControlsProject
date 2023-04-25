@@ -7,10 +7,8 @@ from sys import path
 path.append('..')
 from tools.rotations import *
 from sensing.pinhole_camera import *
-# import sensing.mav_points
+import sensing.mav_points as mav_points
 import cv2 as cv
-
-from sensing.mav_points import *
 
 class Simulated_Camera:
 
@@ -40,7 +38,7 @@ class Simulated_Camera:
 
         self.image = np.zeros((resolution.item(0), resolution.item(1)), dtype=int)
         self.position = np.zeros((3,1))
-        self.orientation = np.zeros((3,1))
+        self.orientation = np.array([0,0,0])
 
     
     def is_in_field_of_view(self, obj_position:np.ndarray) -> bool:
@@ -146,17 +144,15 @@ class Simulated_Camera:
         # Get the location of the object in the inertial plane
         R__i_to_c = Euler2Rotation(phi, theta, psi).T
         
-        position_cam_frame = np.array([[0., 1., 0.],
-                                      [0., 0., 1.],
-                                      [1., 0., 0.]]) @ R__i_to_c @ (obj_position - self.position)
+        position_cam_frame = R__i_to_c @ (obj_position - self.position)
 
         x_0 = position_cam_frame.item(0)
         y_0 = position_cam_frame.item(1)
         z_0 = position_cam_frame.item(2)
 
-        location_i = self.pin_hole.get_image_projection(np.array([[x_0, y_0]]).T, z_0)
+        location_i = self.pin_hole.get_image_projection(np.array([[y_0, -z_0]]).T, x_0)
 
-        return location_i
+        return -1*location_i
 
 
     def get_image(self, obj_position:np.ndarray, radius: float) -> np.ndarray:
@@ -172,7 +168,7 @@ class Simulated_Camera:
 
         self.image = np.zeros((self.resolution.item(0), self.resolution.item(1)))
 
-        location = -1 * self.get_image_location(obj_position)
+        location = self.get_image_location(obj_position)
 
         rad_i = -1 * self.get_image_size(obj_position, radius)
 
@@ -180,14 +176,15 @@ class Simulated_Camera:
         y_step = self.image_size.item(1) / self.resolution.item(1)
         
         x_location = location.item(0) / x_step
-        y_location = location.item(1) / x_step
+        y_location = -location.item(1) / y_step
         
         loc = [int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2)]
+
         rad = int(rad_i / x_step)
         
-        print(loc)
+     
         if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0) and loc[1] < self.resolution.item(1):
-            print(loc, rad)
+
             cv.circle(img=self.image, center=(loc[0], loc[1]), radius=rad, color=(255, 255, 255), thickness=-1)
         
         # for j in range(0, len(self.image)):
@@ -205,12 +202,12 @@ class Simulated_Camera:
 
         return self.image
     
-    def draw_mav(self, obj_position:np.ndarray, obj_orientation:np.ndarray) -> np.ndarray:     
+    def draw_mav(self, target_position:np.ndarray, target_orientation:np.ndarray) -> np.ndarray:     
         """
         Given an object's position, returns an mask image with the object. Assumes object is a sphere
 
         :param obj_position: the 3d intertial position of the object in the 
-        the from [n,e,d]
+        the from [[n,e,d]]
 
         :param radius: the radius of the object in meters
 
@@ -219,21 +216,47 @@ class Simulated_Camera:
 
         :return: The mask image of the object as a numpy array
         """
+        target_rotation = Euler2Rotation(target_orientation.item(0), target_orientation.item(1), target_orientation.item(2))
+        mav_rotation = Euler2Rotation(self.orientation.item(0), self.orientation.item(1), self.orientation.item(2))
 
+       # Load in points transformed to enemy mav's position in the inertial frame
+        rotated_target = mav_points.get_transformed_points(target_position,target_rotation)
+
+        relative_position = np.zeros_like(rotated_target)
+
+        # Now move the rotated mav out and then rotate to body frame
+        for i in range(0,len(relative_position)):
+
+            temp_point = np.array([rotated_target[i,:]]).T
+            
+            transformed_point = mav_rotation.T @ (temp_point - self.position)
+
+            relative_position[i] = transformed_point.T[0]
+
+
+        # Setup for digital processing
         mask = np.zeros(self.resolution)
 
-        rotation = Quaternion2Rotation(obj_orientation)
+        mask_points = []
 
-        drone_points = get_transformed_points(obj_position, rotation)
+        # Find the pixel location of the mav
+        for i in range(0,len(relative_position)):
+            
+            tf_points = self.get_image_location(relative_position[i])
 
-        drone_image_points = np.array([])
+            image_points = self._image_index(tf_points, self.image_size, self.resolution)
 
-        for i in range(0, len(drone_image_points)):
+            print(image_points)
 
-            pointeroo = drone_image_points[i]
+            mask_points.append(image_points)
 
-            image_point = 0 
+        render = mav_points.points_to_polygons(np.array(mask_points))
 
+        # make the mask
+        for i in range(0,len(render)):
+            
+            polygon = render[i]
+            cv.fillConvexPoly(mask,polygon,1)
 
         return mask
 
@@ -259,36 +282,8 @@ class Simulated_Camera:
         return
     
 
-    def _make_render_image(surfaces: np.ndarray) -> np.ndarray:
-        """
-        Function that given the location of surfaces making up the uav 
-        makes a full render of the uav in the image plane, making up of all surfaces that 
-        touch the image plane
-
-        :param surfaces: An ndarry containing smaller arrays which are each of the surfaces
-        which make up the plane. For order see return of mav_points.points_to_polygon 
-
-        :return: ndarray mask containing the rendered surfaces       
-        """
-
-        pass
-
-    def _reduce_render_image(render_image: np.ndarray) -> np.ndarray:
-        """
-        Function that given the location of surfaces making up the uav 
-        makes a full render of the uav in the image plane, making up of all surfaces that 
-        touch the image plane
-
-        :param surfaces: An ndarry containing smaller arrays which are each of the surfaces
-        which make up the plane. For order see return of mav_points.points_to_polygon 
-
-        :return: ndarray mask containing the rendered surfaces       
-        """
-
-        pass
-
     
-    def _image_index(point: np.ndarray, image_size: np.ndarray, image_resolution: np.ndarray) -> np.ndarray:
+    def _image_index(self, point: np.ndarray, image_size: np.ndarray, image_resolution: np.ndarray) -> np.ndarray:
         """
         Takes in the location of a point in the image frame and outputs the image 
         index 
@@ -301,23 +296,43 @@ class Simulated_Camera:
 
         axis_origin = image_resolution / 2.
 
-
         for i in range(0, len(axis_origin)): 
             
             axis_origin[i] = int(axis_origin[i])
 
         # conversion factor of displacement in length to pixels
-        loc_to_pix_x = image_resolution.item(0) / image_size.item(0)   
-        loc_to_pix_y = image_resolution.item(0) / image_size.item(0)
+        loc_to_pix_x = image_resolution.item(0) / image_size.item(0)
+        loc_to_pix_y = image_resolution.item(1) / image_size.item(1)
 
         d_pix_x = int(point.item(0) *  loc_to_pix_x)
-        d_pix_y = int(point.item(0) *  loc_to_pix_y)
+        d_pix_y = int(point.item(1) *  loc_to_pix_y)
 
         i = d_pix_x + axis_origin[0]
         j = -d_pix_y + axis_origin[1]
 
-        return np.array([i,j])
+        return np.array([int(i),int(j)])
+    
+    
+    def _image_index_2(self, location: np.ndarray, image_size: np.ndarray, image_resolution: np.ndarray) -> np.ndarray:
+        """
+        Takes in the location of a point in the image frame and outputs the image 
+        index 
 
+        :param location: point location in format [[xi], [yi]] or similar
+        :param image_size: image size in units of length in form [[size_x], [size_y]] or similar
+
+        :return: mask location of point in form [i,j] or simlar
+        """
+
+        x_step = self.image_size.item(0) / self.resolution.item(0)
+        y_step = self.image_size.item(1) / self.resolution.item(1)
+        
+        x_location = location.item(0) / x_step
+        y_location = -location.item(1) / y_step
+        
+        loc = [int(x_location + self.resolution.item(0)/2), int(y_location + self.resolution.item(1)/2)]
+
+        return loc
     
 
 
@@ -327,16 +342,22 @@ class Simulated_Camera:
 
 if __name__ == '__main__':
 
-    object_radius = 10.0
-    object_location = np.array([4,-30,100])
+    object_location = np.array([[574.93725],
+                             [1.90394],
+                             [-108.42]])
+    
+    obj_orientation = np.array([0.00094624, -0.0056153,0.070056])
 
-    cam = Simulated_Camera(10,np.array([300,300]),np.array([10,10]))
+    cam = Simulated_Camera(1.0,np.array([600,600]),np.array([3,3]))
 
-    mask = cam.get_image(object_location, object_radius)
+    cam_rot = np.array([0.00167033, -0.446759, -0.0018345])
+
+    cam.set_pose(np.array([[156.3434, -10.59820, -110.8446]]).T, cam_rot)
+
+    print(cam.image_size)
+
+    mask = cam.draw_mav(object_location, obj_orientation)
 
     cv.imshow('Mask', mask)
     cv.waitKey(0)
-
-
-    print(mask)
 

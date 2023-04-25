@@ -8,7 +8,7 @@ path.append('..')
 from tools.rotations import *
 
 # define MAV body parameters
-unit_length = 0.25
+unit_length = 10.
 fuse_h = unit_length
 fuse_w = unit_length
 fuse_l1 = unit_length * 2
@@ -22,7 +22,7 @@ tail_w = unit_length * 2
 
 # points are in NED coordinates
 #   define the points on the aircraft following diagram Fig 2.14
-points = np.array([[fuse_l1, 0, 0],  # point 1 [0]
+uav_points = np.array([[fuse_l1, 0, 0],  # point 1 [0]
                     [fuse_l2, fuse_w / 2.0, -fuse_h / 2.0],  # point 2 [1]
                     [fuse_l2, -fuse_w / 2.0, -fuse_h / 2.0],  # point 3 [2]
                     [fuse_l2, -fuse_w / 2.0, fuse_h / 2.0],  # point 4 [3]
@@ -39,28 +39,6 @@ points = np.array([[fuse_l1, 0, 0],  # point 1 [0]
                     [-fuse_l3 + tail_l, 0, 0],  # point 15 [14]
                     [-fuse_l3, 0, -tail_h],  # point 16 [15]
                     ])
-
-def points_to_polygons(points:np.ndarray) -> tuple:
-
-    nose_top = np.array([points[0], points[1], points[2]]) # nose-top
-    nose_right = np.array([points[0], points[1], points[4]])  # nose-right
-    nose_bottom = np.array([points[0], points[3], points[4]])  # nose-bottom
-    nose_left = np.array([points[0], points[3], points[2]])  # nose-left
-    fuselage_left = np.array([points[5], points[2], points[3]])  # fuselage-left
-    fuselage_top = np.array([points[5], points[1], points[2]])  # fuselage-top
-    fuselage_right = np.array([points[5], points[1], points[4]])  # fuselage-right
-    fuselage_bottom = np.array([points[5], points[3], points[4]])  # fuselage-bottom
-    wing_1 = np.array([points[6], points[7], points[9]])  # wing 1
-    wing_2 = np.array([points[7], points[8], points[9]])  # wing 2
-    elevator_1 = np.array([points[10], points[11], points[12]])  # horizontal tail
-    elevator_2 = np.array([points[10], points[12], points[13]])  # horizontal tail
-    tail = np.array([points[5], points[14], points[15]])  # vertical tail
-
-
-    return nose_top, nose_right, nose_bottom, nose_left,\
-           fuselage_left, fuselage_top, fuselage_right, fuselage_bottom,\
-           wing_1, wing_2, elevator_1, elevator_2, tail
-
 
 def points_to_polygons(points:np.ndarray) -> list:
     """
@@ -97,7 +75,9 @@ def get_transformed_points(NED_translation: np.ndarray, rotation_matrix: np.ndar
     :return: returns the plane points in the rotated frame
     """
 
-    tf_points = np.copy(points)
+    translation = np.array([NED_translation.item(0), NED_translation.item(1), NED_translation.item(2)])
+
+    tf_points = np.copy(uav_points)
 
     #Translate points and rotate points
     for i in range(0, len(tf_points)):
@@ -115,7 +95,7 @@ def get_transformed_points(NED_translation: np.ndarray, rotation_matrix: np.ndar
 
         tf_points[i] = tmp_point
 
-        tf_points[i] = tf_points[i] - NED_translation # translate points
+        tf_points[i] = tf_points[i] + translation # translate points
 
 
     return tf_points
