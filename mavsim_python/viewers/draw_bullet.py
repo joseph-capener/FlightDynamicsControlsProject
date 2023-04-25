@@ -104,7 +104,7 @@ class DrawBullet:
                            ]).T
 
         # scale points for better rendering
-        scale = 20
+        scale = 2
         points = scale * points
 
         #   define the colors for each face of triangular mesh

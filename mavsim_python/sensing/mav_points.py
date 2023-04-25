@@ -8,7 +8,7 @@ path.append('..')
 from tools.rotations import *
 
 # define MAV body parameters
-unit_length = 0.25
+unit_length = 10.
 fuse_h = unit_length
 fuse_w = unit_length
 fuse_l1 = unit_length * 2

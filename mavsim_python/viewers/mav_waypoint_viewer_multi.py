@@ -12,6 +12,7 @@ import pyqtgraph.opengl as gl
 from viewers.draw_mav import DrawMav
 from viewers.draw_path import DrawPath
 from viewers.draw_waypoints import DrawWaypoints
+from viewers.draw_camera_fov import DrawFov
 
 
 class MAVAndWaypointViewer:
@@ -38,6 +39,7 @@ class MAVAndWaypointViewer:
         self.mav_plot = []
         self.path_plot = []
         self.waypoint_plot = []
+        self.fov_plot = []
 
     def update(self, state, path, waypoints):
         blue = np.array([[30, 144, 255, 255]])/255.
@@ -48,9 +50,11 @@ class MAVAndWaypointViewer:
             self.waypoint_plot = DrawWaypoints(waypoints, path.orbit_radius, blue, self.window)
             self.path_plot = DrawPath(path, red, self.window)
             self.plot_initialized = True
+            self.fov_plot = DrawFov(state, self.window)
         # else update drawing on all other calls to update()
         else:
             self.mav_plot.update(state)
+            self.fov_plot.update(state)
             if waypoints.flag_waypoints_changed:
                 self.waypoint_plot.update(waypoints)
                 waypoints.flag_waypoints_changed = False

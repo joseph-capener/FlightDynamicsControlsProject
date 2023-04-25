@@ -57,6 +57,8 @@ class MavViewer():
         self.follow_key_pressed = False
         self.bullet_key_pressed = False
         self.follow_id = 0
+        self.timer = 0
+        self.fire_flag = False
 
     def update(self, state, path, waypoints, id):
         blue = np.array([[30, 144, 255, 255]])/255.
@@ -93,12 +95,31 @@ class MavViewer():
         if self.window.follow_key not in self.window.keysPressed:
             self.follow_key_pressed = False
             
-    def update_bullet(self, state, time_step, bullet_id):
-        if self.window.fire_bullet in self.window.keysPressed and self.bullet_key_pressed == False and self.curr_bullet_id < 20:
+    def update_bullet(self, state, time_step, bullet_id, isFiring):
+
+        if self.timer < 2500:
+            self.timer += 1
+        else:
+            self.timer = 0
+            self.fire_flag = True
+
+        # Auto Fire
+        if isFiring and self.fire_flag and self.curr_bullet_id < self.numBullets:
+            #print(self.curr_bullet_id)
+            self.bullet_plot[self.curr_bullet_id] = DrawBullet(state,self.window)
+            self.bullet_initialized[self.curr_bullet_id] = True
+            self.curr_bullet_id += 1
+            print('Bullets:',self.numBullets-self.curr_bullet_id)
+            self.fire_flag = False
+
+
+        # Manual Fire
+        if self.window.fire_bullet in self.window.keysPressed and self.bullet_key_pressed == False and self.curr_bullet_id < self.numBullets:
             self.bullet_plot[self.curr_bullet_id] = DrawBullet(state,self.window)
             self.bullet_key_pressed = True
             self.bullet_initialized[self.curr_bullet_id] = True
             self.curr_bullet_id += 1
+            print('Bullets:',self.numBullets-self.curr_bullet_id)
         if self.window.fire_bullet not in self.window.keysPressed:
             self.bullet_key_pressed = False
 

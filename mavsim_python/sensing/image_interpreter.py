@@ -6,11 +6,11 @@
 
 import numpy as np
 import cv2 as cv
-from digital_camera import Simulated_Camera
+from sensing.digital_camera import Simulated_Camera
 
 
 
-class Image_Isnterpreter:
+class ImageInterpreter:
 
     
     cam = None
@@ -106,12 +106,14 @@ if __name__ == '__main__':
     video = cv.VideoCapture(0) # open a camera
 
     cam = Simulated_Camera(10,np.array([300,300]),np.array([10,10]))
-    interpretor = Image_Isnterpreter(cam)
+    interpretor = ImageInterpreter(cam)
 
     while(True):
 
         _, frame  = video.read() # read the camera image
 
+
+        print(frame)
         # mask a mask
         hsv_frame = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 

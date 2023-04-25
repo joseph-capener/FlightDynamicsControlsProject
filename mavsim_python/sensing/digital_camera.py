@@ -112,13 +112,11 @@ class Simulated_Camera:
         
         position_cam_frame = obj_position - self.position
         
-        position_cam_frame = np.array([[0., 1., 0.],
-                                      [0., 0., 1.],
-                                      [1., 0., 0.]]) @ R__i_to_c @ position_cam_frame
+        position_cam_frame = R__i_to_c @ position_cam_frame
         
         
 
-        z_0 = position_cam_frame.item(2)
+        z_0 = position_cam_frame.item(0)
 
         # Now get radius size
 
@@ -183,10 +181,13 @@ class Simulated_Camera:
         rad = int(rad_i / x_step)
         
      
-        if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0) and loc[1] < self.resolution.item(1):
-
-            cv.circle(img=self.image, center=(loc[0], loc[1]), radius=rad, color=(255, 255, 255), thickness=-1)
+        # print(loc)
+        # cv.rectangle(img=self.image, pt1=(0,0), pt2=(self.resolution.item(0), self.resolution.item(1)), color=(0, 0, 0), thickness=-1)
+        if loc[0] >= 0 and loc[1] >= 0 and loc[0] < self.resolution.item(0)-1 and loc[1] < self.resolution.item(1)-1:
+            # print(loc, rad)
+            cv.circle(img=self.image, center=(loc[0], loc[1]), radius=rad, color=1, thickness=-1)
         
+            
         # for j in range(0, len(self.image)):
 
         #     for i in (range(0, len(self.image[0]))):
@@ -201,6 +202,19 @@ class Simulated_Camera:
         #             self.image[j][i] = 1
 
         return self.image
+    
+    def pixel_to_vector_dir(self, pixel: np.ndarray) -> np.ndarray:
+        
+        px = pixel.item(0)
+        py = pixel.item(1)
+        x_step = self.image_size.item(0) / self.resolution.item(0)
+        y_step = self.image_size.item(1) / self.resolution.item(1)
+        locx = (px - self.resolution.item(0)/2) * x_step
+        locy = (py - self.resolution.item(1)/2) * y_step
+        locz = self.focal_distance
+        
+        return np.array([locx, locy, locz])
+        
     
     def draw_mav(self, target_position:np.ndarray, target_orientation:np.ndarray) -> np.ndarray:     
         """
@@ -227,7 +241,7 @@ class Simulated_Camera:
         # Now move the rotated mav out and then rotate to body frame
         for i in range(0,len(relative_position)):
 
-            temp_point = np.array([rotated_target[i,:]]).T
+            temp_point = np.copy(np.array([rotated_target[i,:]]).T)
             
             transformed_point = mav_rotation.T @ (temp_point - self.position)
 
@@ -244,7 +258,9 @@ class Simulated_Camera:
             
             tf_points = self.get_image_location(relative_position[i])
 
-            image_points = self._image_index(tf_points, self.image_size, self.resolution)
+            print(relative_position[i])
+
+            image_points = self._image_index_2(tf_points, self.image_size, self.resolution)
 
             print(image_points)
 

@@ -42,5 +42,6 @@ class CamSimViewer:
 
         cv.imshow('Camera Viewer', image)
 
-        
+    def update_img(self, img):
+        cv.imshow('Camera Viewer', img)
     

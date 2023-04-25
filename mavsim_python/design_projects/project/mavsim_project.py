@@ -73,9 +73,9 @@ waypoints.type = 'fillet'
 # waypoints.type = 'dubins'
 Va = PLAN.Va0
 waypoints.add(np.array([[0, 0, -100]]).T, Va, np.radians(0), np.inf, 0, 0)
-waypoints.add(np.array([[10000, 0, -300]]).T, Va, np.radians(45), np.inf, 0, 0)
-waypoints.add(np.array([[0, -10000, -600]]).T, Va, np.radians(45), np.inf, 0, 0)
-waypoints.add(np.array([[10000, -10000, -800]]).T, Va, np.radians(-135), np.inf, 0, 0)
+waypoints.add(np.array([[10000, 0, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[0, -10000, -100]]).T, Va, np.radians(45), np.inf, 0, 0)
+waypoints.add(np.array([[10000, -10000, -100]]).T, Va, np.radians(-135), np.inf, 0, 0)
 
 ###############
 
@@ -97,8 +97,8 @@ commanded_state = [None] * NUM_AIRCRAFT
 current_wind    = [None] * NUM_AIRCRAFT
 
  
-mav[0]._state[0] = -300. 
-mav[0]._state[1] = 200.
+mav[0]._state[0] = 1000. 
+mav[0]._state[1] = -1000.
 mav[0]._state[2] = -50. 
 # mav[0]._state[6:10] = Euler2Quaternion(0., )
 mav[0]._state[6:10] = Euler2Quaternion(0.,0.,180)
@@ -210,6 +210,7 @@ while sim_time < end_time:
             
             
             
+            
             # print("dist=", np.linalg.norm(R), "angle = ", np.rad2deg(np.arctan2(R[1] , R[0])))
             # print("SPEED= ",commands.airspeed_command)
             # print((target_angle - np.abs(np.rad2deg(np.arctan2(R[1] , R[0])))[0]))
@@ -231,7 +232,7 @@ while sim_time < end_time:
     #for bullet_id in range(NUM_BULLETS):
     if ANIMATION:
         for bullet_id in range(NUM_BULLETS):
-            mav_view.update_bullet(mav[0].true_state, time_step = SIM.ts_simulation, bullet_id = bullet_id)
+            mav_view.update_bullet(mav[0].true_state, time_step = SIM.ts_simulation, bullet_id = bullet_id, isFiring = autopilotSD.isFiring)
         
         
     if DATA_PLOTS:

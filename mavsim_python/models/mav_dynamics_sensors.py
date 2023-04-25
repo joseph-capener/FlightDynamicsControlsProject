@@ -375,7 +375,7 @@ class MavDynamics:
         #                         # 100 Hz frequency will probably be too low.
         # dt = 1/radar_frequency # Time inbetween updated radar position data
         
-        radar_accuracy = 3 # TODO Adjust to realistic range of accuracy
+        radar_accuracy = 0.01 # TODO Adjust to realistic range of accuracy
 
         self.other_state.radar_n = np.random.normal(intruder_state.north,radar_accuracy) # pn
         self.other_state.radar_e = np.random.normal(intruder_state.east,radar_accuracy) # pe
