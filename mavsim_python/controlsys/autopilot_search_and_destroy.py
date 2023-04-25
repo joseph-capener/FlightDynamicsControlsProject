@@ -29,11 +29,11 @@ class AutopilotSD:
         self.canSeeTarget = False
         
         self.cam = Simulated_Camera(1 ,np.array([900,900]), np.array([10,10]), np.array([60.,60.]))
-        self.mav_cam = Simulated_Camera(0.5 ,np.array([900,900]), np.array([2.5,2.5]))
+        self.mav_cam = Simulated_Camera(1 ,np.array([900,900]), np.array([10,10]), np.array([60.,60.]))
         self.camView = CamSimViewer(self.cam)
         self.mavView = MAVMaskViewer(self.mav_cam)
 
-        self.interpreter = ImageInterpreter(self.cam)
+        self.interpreter = ImageInterpreter(self.mav_cam)
         
         self.updateTimers = 0. # camera update timer
         self.trackTimer = 0    # timer that regulates how long we need to track the other mav before we start trying to shoot.
@@ -156,21 +156,21 @@ class AutopilotSD:
             m_theta = self.mav_list[0].true_state.theta
             m_psi = self.mav_list[0].true_state.psi
 
-            self.mavView.update(mav_state, np.array([[m_phi, m_theta, m_psi]]), 
-                                target_state, np.array([t_phi, t_theta, t_psi]))
+            #self.mavView.update(mav_state, np.array([[m_phi, m_theta, m_psi]]), 
+                                # target_state, np.array([t_phi, t_theta, t_psi]))
             
 
             self.updateTimers = 0.
             # get the gray img
-            gray_img = self.cam.get_image(np.array([[self.mav_list[self.targetId].true_state.north],
-                                                    [self.mav_list[self.targetId].true_state.east],
-                                                    [-self.mav_list[self.targetId].true_state.altitude]]), 25)
+            gray_img = self.mav_cam.draw_mav(target_state, np.array([t_phi, t_theta, t_psi]))
             # convert this to color
             display_img = cv.merge([gray_img,gray_img,gray_img])
             # mask out what's onscreen
-            ret, mask = cv.threshold( self.cam.image, 127, 255, 0)
+            ret, mask = cv.threshold(self.mav_cam.image, 127, 255, 0)
             # get the centroid of the mask
-            centroid = self.interpreter.get_image_centroid(mask)
+            centroid = self.interpreter.get_image_centroid(self.mav_cam.image)
+
+            # print(centroid)
             # if the centroid is present onscreen
             if centroid[0] >= 0 and centroid[1] >= 0:
                 # draw a red circle at it's location
@@ -182,7 +182,7 @@ class AutopilotSD:
                 self.target_azimuth   = np.arctan(self.vector_centroid[0] / self.vector_centroid[2])
                 self.target_elevation = np.arctan(self.vector_centroid[1] / self.vector_centroid[2])
                 textstr = f'az={np.round(np.rad2deg(self.target_azimuth),2)}, el={np.round(np.rad2deg(self.target_elevation),2)}'
-                cv.putText(display_img, textstr, (0, 20), cv.FONT_HERSHEY_PLAIN, 1, (0,0,255), 1)
+                cv.putText(display_img, textstr, (0, 80), cv.FONT_HERSHEY_PLAIN, 3, (0,0,255), 1)
                 # print("az = ", np.rad2deg(self.target_azimuth) ,"el = ", np.rad2deg(self.target_elevation))
             else:
                 self.onScreenFlag = False
@@ -199,7 +199,7 @@ class AutopilotSD:
                 commands.altitude_command = -pos1.item(2)
                 
                 if self.onScreenFlag:
-                    self.tracking_SM = True
+                    self.tracking_SM = 1
                 
         elif self.tracking_SM == 1:
                 
@@ -224,6 +224,7 @@ class AutopilotSD:
                 # print("diff, ", np.rad2deg(myState.theta - self.target_elevation))
                 
                 # print("height=", )
+                #print(myState.theta - self.target_elevation , np.abs(np.rad2deg(myState.chi - course_from_cam)))
                 if np.rad2deg(myState.theta - self.target_elevation) < 1 and np.abs(np.rad2deg(myState.chi - course_from_cam)) < 1.:
                     self.trackTimer += SIM.ts_simulation
                 else:

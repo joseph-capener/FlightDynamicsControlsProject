@@ -251,6 +251,10 @@ class Simulated_Camera:
 
         :return: The mask image of the object as a numpy array
         """
+
+        mask = np.zeros(self.resolution)
+        self.image = mask
+
         target_rotation = Euler2Rotation(target_orientation.item(0), target_orientation.item(1), target_orientation.item(2))
         mav_rotation = Euler2Rotation(self.orientation.item(0), self.orientation.item(1), self.orientation.item(2))
 
@@ -258,7 +262,8 @@ class Simulated_Camera:
         rotated_target = mav_points.get_transformed_points(target_position,target_rotation)
 
         relative_position = np.zeros_like(rotated_target)
-
+        
+       
         # Now move the rotated mav out and then rotate to body frame
         for i in range(0,len(relative_position)):
 
@@ -268,9 +273,12 @@ class Simulated_Camera:
 
             relative_position[i] = transformed_point.T[0]
 
+        
+        if relative_position[0][0] <= 0:
+
+            return mask
 
         # Setup for digital processing
-        mask = np.zeros(self.resolution)
 
         mask_points = []
 
@@ -279,11 +287,11 @@ class Simulated_Camera:
             
             tf_points = self.get_image_location_rel(relative_position[i])
 
-            print(relative_position[i])
+            #print(relative_position[i])
 
             image_points = self._image_index_2(tf_points, self.image_size, self.resolution)
 
-            print(image_points)
+            #print(image_points)
 
             mask_points.append(image_points)
 
@@ -294,6 +302,8 @@ class Simulated_Camera:
             
             polygon = render[i]
             cv.fillConvexPoly(mask,polygon,1)
+
+        self.image = mask
 
         return mask
 
